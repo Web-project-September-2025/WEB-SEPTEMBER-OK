@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Επεξεργασία Προφίλ</title>
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body class="student-dashboard">
+
+  <!-- Logo & γραμμή -->
+  <div class="overlay-logo">
+    <img src="images/logo.png" alt="logo" class="logo" />
+    <div class="top-line"></div>
+  </div>
+
+  <!-- Τίτλος πάνω δεξιά -->
+  <div class="top-right-title">
+    <h2>Επεξεργασία Προφίλ</h2>
+  </div>
+
+  <!-- Φόρμα προφίλ -->
+  <div class="thesis-details-section">
+    <form id="profileForm">
+      <label for="adress">Διεύθυνση:</label>
+      <input type="text" id="adress" name="adress" required />
+
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" required />
+
+      <label for="phone">Τηλέφωνο:</label>
+      <input type="text" id="phone" name="phone" />
+
+      <button type="submit" class="btn-small">Αποθήκευση</button>
+    </form>
+  </div>
+
+  <!-- Επιστροφή -->
+  <button class="logout-btn" onclick="window.location.href='student-dashboard.html'">Επιστροφή</button>
+
+  <script>
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  // Φόρτωσε τα στοιχεία του χρήστη όταν φορτώσει η σελίδα
+  fetch(`http://localhost:3000/user/${user.UserID}`)
+    .then((res) => res.json())
+    .then((data) => {
+      document.getElementById("adress").value = data.Adress || "";
+      document.getElementById("email").value = data.Email || "";
+      document.getElementById("phone").value = data.Phone || "";
+    });
+
+  // Όταν πατάς αποθήκευση
+  document.getElementById("profileForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const Adress = document.getElementById("adress").value;
+    const Email = document.getElementById("email").value;
+    const Phone = document.getElementById("phone").value;
+
+    fetch(`http://localhost:3000/user/${user.UserID}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ Adress, Email, Phone }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        alert("✅ Τα στοιχεία αποθηκεύτηκαν επιτυχώς.");
+        // Αν θες, επέστρεψε στο dashboard:
+        // window.location.href = "student-dashboard.html";
+      })
+      .catch((err) => {
+        alert("⛔ Σφάλμα αποθήκευσης: " + err.message);
+      });
+  });
+</script>
+
+</body>
+</html>

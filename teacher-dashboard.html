@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Καθηγητή</title>
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body>
+  <header>
+    <h1>Dashboard Καθηγητή</h1>
+    <button onclick="logout()">Αποσύνδεση</button>
+  </header>
+
+  <main class="dashboard">
+    <h2>Διπλωματικές που Επιβλέπω</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Φοιτητής</th>
+          <th>Τίτλος</th>
+          <th>Κατάσταση</th>
+          <th>Πρόοδος</th>
+          <th>Ενέργειες</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td data-label="Φοιτητής">Γιάννης Κωνσταντίνου</td>
+          <td data-label="Τίτλος">Σύστημα Προτάσεων Βιβλίων</td>
+          <td data-label="Κατάσταση">Σε εξέλιξη</td>
+          <td data-label="Πρόοδος">40%</td>
+          <td data-label="Ενέργειες">
+            <a href="thesis-details.html" class="btn">Προβολή</a>
+          </td>
+        </tr>
+        <tr>
+          <td data-label="Φοιτητής">Μαρία Ιωάννου</td>
+          <td data-label="Τίτλος">Ανάλυση Δεδομένων Χρηστών</td>
+          <td data-label="Κατάσταση">Ολοκληρωμένη</td>
+          <td data-label="Πρόοδος">100%</td>
+          <td data-label="Ενέργειες">
+            <a href="thesis-details.html" class="btn">Προβολή</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+
+  <script>
+    function logout() {
+      window.location.href = "index.html";
+    }
+  </script>
+</body>
+</html>

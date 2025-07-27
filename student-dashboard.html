@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Φοιτητή</title>
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body class="student-dashboard">
+
+  <!-- Logo & γραμμή -->
+  <div class="overlay-logo">
+    <img src="images/logo.png" alt="logo" class="logo" />
+    <div class="top-line"></div>
+  </div>
+
+  <!-- Τίτλος πάνω δεξιά -->
+  <div class="top-right-title">
+    <h2>Dashboard Φοιτητή</h2>
+  </div>
+
+  <!-- Περιεχόμενο διπλωματικών -->
+  <div class="thesis-list">
+  <!-- Γραμμή τίτλων -->
+  <div class="thesis-headers">
+    <span>Τίτλος</span>
+    <span>Διδάσκων</span>
+    <span>Κατάσταση</span>
+    <span>Πρόοδος</span>
+    <span>Ενέργειες</span>
+  </div>
+
+  <!-- Εδώ θα μπουν δυναμικά οι διπλωματικές -->
+  <div id="thesis-container"></div>
+</div>
+
+  <!-- Κουμπί αποσύνδεσης -->
+  <button class="logout-btn" onclick="window.location.href='index.html'">Αποσύνδεση</button>
+  
+  <!-- Κουμπί προβολής προφίλ -->
+  <a href="edit-profile.html" class="btn-small" style="position: absolute; top: 120px; right: 60px;">Επεξεργασία Προφίλ</a>
+
+  <div class="profile-box" id="profileBox">
+  <h3>Στοιχεία Προφίλ</h3>
+  <p><strong>Διεύθυνση:</strong> <span id="profileAddress">-</span></p>
+  <p><strong>Email:</strong> <span id="profileEmail">-</span></p>
+  <p><strong>Κινητό:</strong> <span id="profileMobile">-</span></p>
+</div>
+
+ <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user || user.Role !== "STUDENT") {
+      alert("⛔ Μη εξουσιοδοτημένη πρόσβαση");
+      window.location.href = "login.html";
+      return;
+    }
+
+    // Κάνε fetch τις διπλωματικές του φοιτητή
+    fetch(`http://localhost:3000/thesis/student/${user.UserID}`)
+      .then((res) => res.json())
+      .then((theses) => {
+        const container = document.getElementById("thesis-container");
+
+        if (theses.length === 0) {
+          container.innerHTML = "<p>Δεν έχετε καταχωρημένη διπλωματική εργασία.</p>";
+          return;
+        }
+
+        theses.forEach((thesis) => {
+          const item = document.createElement("div");
+          item.classList.add("thesis-row");
+          item.innerHTML = `
+            <div><strong>${thesis.Title}</strong></div>
+            <div>${thesis.ProfessorName || "—"}</div>
+            <div>${thesis.Status}</div>
+            <div>${thesis.Progress}%</div>
+            <div>
+              <a href="thesis-details.html?id=${thesis.ThesisID}" class="btn-small">Προβολή</a>
+            </div>
+          `;
+          container.appendChild(item);
+        });
+      })
+      .catch((err) => {
+        console.error(err);
+        alert("Σφάλμα κατά την ανάκτηση διπλωματικών.");
+      });
+      
+       // Φόρτωσε στοιχεία προφίλ (διεύθυνση, email, τηλέφωνο)
+    fetch(`http://localhost:3000/user/${user.UserID}`)
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("profileAddress").textContent = data.Adress || "-";
+        document.getElementById("profileEmail").textContent = data.Email || "-";
+        document.getElementById("profileMobile").textContent = data.Phone || "-"; 
+      })
+      .catch(err => {
+        console.error("Σφάλμα προφίλ:", err);
+      });
+  });
+  
+     
+
+</script>
+
+</body>
+</html>

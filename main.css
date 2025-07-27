@@ -1,0 +1,324 @@
+/* === Full page with background image === */
+body.custom-landing {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  background: url("../images/landing-background.png") no-repeat center center fixed;
+  background-size: cover;
+  font-family: "Segoe UI", sans-serif;
+  position: relative;
+}
+
+/* === Logo area === */
+.overlay-logo {
+  position: absolute;
+  top: 15px;
+  left: 60px;
+}
+
+.logo {
+  width: 500px;
+  opacity: 0.6;
+}
+
+/* === Line under logo === */
+.top-line {
+  margin-top: 8px;
+  height: 2px;
+  width: 1400px;
+  background-color: white;
+  opacity: 0.5;
+}
+
+/* === Bottom left title + εισοδος === */
+.bottom-left {
+  position: absolute;
+  bottom: 100px;
+  left: 60px;
+  color: white;
+}
+
+.bottom-left h1 {
+  font-size: 3rem;
+  margin: 0 0 1rem 0;
+  line-height: 1.4;
+}
+
+/* === Είσοδος στην πλατφόρμα === */
+.entry-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 2rem;
+}
+
+/* === Button === */
+.btn {
+  background-color: #00ffff;
+  color: rgb(0, 0, 0);
+  border: none;
+  padding: 0.6rem 1.4rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.btn:hover {
+  background-color: #42aed5;
+}
+
+/* 🔲 Κεντρικό πλαίσιο εισόδου */
+.login-box {
+  position: absolute;
+  top: 55%;                      /* Κάθετη στοίχιση στο κέντρο */
+  left: 50%;                     /* Οριζόντια στοίχιση στο κέντρο */
+  transform: translate(-50%, -50%);  /* Μεταφορά ώστε να "κάτσει" ακριβώς στο κέντρο */
+  background-color: rgba(255, 255, 255, 0.94); /* Λευκό με ελαφριά διαφάνεια */
+  padding: 2rem 2.5rem;          /* Εσωτερικά περιθώρια */
+  border-radius: 12px;           /* Στρογγυλεμένες γωνίες */
+  width: 90%;                    /* Πλάτος σχετικό με την οθόνη (κινητά) */
+  max-width: 400px;             /* Μέγιστο πλάτος για υπολογιστή */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); /* Σκιά γύρω από το πλαίσιο */
+  opacity: 0.9;
+}
+
+/* 📝 Τίτλος "Είσοδος στην Πλατφόρμα" */
+.login-box h2 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #004d40;                /* Σκούρο πράσινο */
+  opacity: 1.0;
+}
+
+/* 🔽 Η ίδια η φόρμα */
+.login-box form {
+  display: flex;
+  flex-direction: column;       /* Τα πεδία μπαίνουν κάθετα */
+   opacity: 1.0;
+}
+
+/* 🏷️ Ετικέτες των πεδίων (π.χ. "Όνομα χρήστη") */
+.login-box label {
+  margin-bottom: 0.4rem;        /* Απόσταση από input */
+  font-weight: 500;             /* Μισοέντονα γράμματα */
+  opacity: 1.0;
+}
+
+/* 🧾 Όλα τα input και select πεδία */
+.login-box input,
+.login-box select {
+  padding: 0.6rem;              /* Εσωτερικό padding */
+  margin-bottom: 1rem;          /* Απόσταση μεταξύ των πεδίων */
+  border: 1px solid #ccc;       /* Απαλό γκρι περίγραμμα */
+  border-radius: 6px;           /* Στρογγυλεμένες γωνίες */
+  font-size: 1rem;
+  opacity: 1.0;
+}
+
+
+/* === Φόντο για το dashboard του φοιτητή === */
+body.student-dashboard {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  background: url("../images/student.png") no-repeat center center fixed;
+  background-size: cover;
+  font-family: "Segoe UI", sans-serif;
+  position: relative;
+  color: white;
+}
+
+/* === Logo area === */
+.overlay-logo {
+  position: absolute;
+  top: 30px;
+  left: 60px;
+}
+
+.logo {
+  width: 500px;
+  opacity: 0.6;
+}
+
+/* === Γραμμή κάτω από το logo === */
+.top-line {
+  margin-top: 8px;
+  height: 2px;
+  width: 1470px;
+  background-color: white;
+  opacity: 0.5;
+}
+
+/* === Τίτλος πάνω δεξιά === */
+.top-right-title {
+  position: absolute;
+  top: 30px;
+  right: 60px;
+}
+
+.top-right-title h2 {
+  margin: 0;
+  font-size: 2.5rem;
+  color: white;
+}
+
+/* Γραμμή επικεφαλίδων */
+/* === Περιεχόμενο: Οι Διπλωματικές μου === */
+.thesis-list {
+  position: absolute;
+  top: 410px;         /* Όσο μεγαλύτερο τόσο πιο κάτω */
+  left: 60px;
+  right: 60px;
+}
+
+.thesis-headers {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.4);
+  padding-bottom: 0.5rem;
+}
+
+/* Γραμμή διπλωματικής */
+.thesis-row {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr;
+  align-items: center;
+  padding: 0.4rem 0;
+  color: #e0e0e0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-small {
+  display: inline-block;
+  text-decoration: none;
+  padding: 0.4rem 5rem;
+  background-color: #00796b;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.3s ease;
+}
+
+.btn-small:hover {
+  background-color: #004d40;
+}
+
+/* === Κουμπί αποσύνδεσης === */
+.logout-btn {
+  position: absolute;
+  bottom: 30px;
+  left: 60px;
+  background-color: #00796b;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.4rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.logout-btn:hover {
+  background-color: #004d40;
+}
+
+.thesis-details-box {
+  position: absolute;
+  top: 200px; 
+  left: 60px;
+  right: 60px;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 2rem;
+  border-radius: 12px;
+  width: 700px;
+  margin: 0 auto;
+  color: white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.thesis-details-box h3 {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  padding-bottom: 0.5rem;
+  text-align: center;
+}
+
+.info-pair {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+/* === Ενότητα λεπτομερειών === */
+.thesis-details-section {
+  position: absolute;
+  top: 220px; 
+  left: 60px;
+  right: 60px;
+  color: white;
+}
+
+.thesis-details-section h3 {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.thesis-details-section p {
+  font-size: 1.1rem;
+  margin-bottom: 0.8rem;
+}
+
+.thesis-details-section {
+  position: absolute;
+  top: 60%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* Κεντράρισμα */
+  padding: 2rem;
+  border-radius: 12px;
+  color: white;
+  width: 300px;
+}
+
+.thesis-details-section input[type="text"],
+.thesis-details-section input[type="email"] {
+  width: 100%;
+  padding: 0.6rem;
+  border-radius: 6px;
+  border: none;
+  margin-top: 0.3rem;
+  font-size: 1rem;
+}
+
+.thesis-details-section button[type="submit"] {
+  position: absolute;
+  top: 95%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: background-color 0.3s ease;
+}
+
+.profile-box {
+  position: absolute;
+  top: 170px;
+  right: 60px;
+  width: 300px;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: 10px;
+  color: white;
+  font-size: 0.95rem;
+}
+
+.profile-box h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  padding-bottom: 0.5rem;
+}
