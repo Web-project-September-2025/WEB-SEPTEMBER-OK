@@ -93,3 +93,40 @@ app.put("/user/:id", (req, res) => {
     res.json({ message: "Τα στοιχεία ενημερώθηκαν επιτυχώς." });
   });
 });
+
+//  Λήψη όλων των καθηγητών
+app.get("/professors", (req, res) => {
+  const sql = "SELECT UserID, UserName, Email FROM users WHERE Role = 'PROFESSOR'";
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).send(err);
+    res.json(results);
+  });
+});
+
+//  Λήψη αιτήσεων για συγκεκριμένη διπλωματική
+app.get("/requests/:thesisId", (req, res) => {
+  const sql = `
+    SELECT r.ReqID, r.ReqStatus, u.UserName, u.Email
+    FROM requests r
+    JOIN users u ON r.ProfessorID = u.UserID
+    WHERE r.ThesisID = ?
+  `;
+  db.query(sql, [req.params.thesisId], (err, results) => {
+    if (err) return res.status(500).send(err);
+    res.json(results);
+  });
+});
+
+//  Καταχώρηση νέας αίτησης καθηγητή
+app.post("/requests", (req, res) => {
+  const { ThesisID, ProfessorID } = req.body;
+  const sql = `
+    INSERT INTO requests (ThesisID, ProfessorID, ReqStatus)
+    VALUES (?, ?, 'QUEUED')
+  `;
+  db.query(sql, [ThesisID, ProfessorID], (err, result) => {
+    if (err) return res.status(500).send(err);
+    res.status(201).json({ message: "Η αίτηση καταχωρήθηκε." });
+  });
+});
+
