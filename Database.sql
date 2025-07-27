@@ -97,7 +97,9 @@ INSERT INTO thesis (ThesisID, Title, Description, StudentID, ProfessorID, Status
 (1,'This is the first tittle', 'This is the description', 1, 3, 'ACTIVE', '2025-06-20', '2026-05-20', '40', 'This is a link'),
 (2,'This is the second tittle', 'This is the Description', 2, NULL, 'ACTIVE', '2025-05-25', '2026-06-15', '90', 'This is a Link'),
 (3,'This is the third tittle', 'This is the Description', 1, 3, 'UNDER-ASSIGNMENT', '2025-01-20', '2026-02-19', '10', 'This is a Link');
-================================================================================================
+
+
+--================================================================================================
 
 /*ΣΥΝΔΕΣΗ ΜΕ ΤΗ ΒΑΣΗ
 mkdir thesis-backend
