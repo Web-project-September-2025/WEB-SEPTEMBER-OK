@@ -6,7 +6,7 @@ To main.css είναι για τα styles
 
 ΑΡΧΙΚΑ:
 Πως συνδέω τη βάση με την ιστοσελίδα?
-Πάρε το node.js και κάντο copy & paste στο vscode ,πάτησε terminal->new terminal που βρίσκεται πάνω πάνω στις 3 τελείες δίπλα από το GO
+Πάρε το index.js και κάντο copy & paste στο vscode ,πάτησε terminal->new terminal που βρίσκεται πάνω πάνω στις 3 τελείες δίπλα από το GO
 Στο τερματικό που θα ανοιξει κάνε copy & paste ό,τι έχω βάλει σε σχόλια στο άρχείο Database.sql κάτω κάτω και στο τέλος πατάς enter και πρέπει να εμφανιστεί αυτό :
 🚀 Server running on http://localhost:3000
 ✅ Συνδέθηκε με τη βάση!
