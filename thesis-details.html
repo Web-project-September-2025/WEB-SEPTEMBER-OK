@@ -29,7 +29,9 @@
     <p><strong>Πρόοδος:</strong> <span id="progress"></span>%</p>
     <p><strong>Repository Link:</strong> <span id="repo"></span></p>
   </div>
-
+  
+  <div id="actionButtons" class="assignmentBtn"></div>
+  
   <!-- Κουμπί Επιστροφή -->
   <button class="logout-btn" onclick="window.history.back()">Επιστροφή⬅</button>
 
@@ -48,6 +50,24 @@
           document.getElementById("endDate").textContent = thesis.EndDate;
           document.getElementById("progress").textContent = thesis.Progress;
           document.getElementById("repo").textContent = thesis.RepositoryLink;
+
+          if (thesis.Status === "UNDER-EXAMINATION") {
+             const button = document.createElement("a");
+             button.href = `examination.html?id=${thesis.ThesisID}`;
+             button.textContent = "Καταχώρηση Εξέτασης";
+             button.className = "btn-small";
+             button.id = "examBtn";
+             document.getElementById("actionButtons").appendChild(button);
+          }
+           
+          if (thesis.Status === "UNDER-ASSIGNMENT") {
+             const button = document.createElement("a");
+             button.href = `under-assignment.html?id=${thesis.ThesisID}`;
+             button.textContent = "Ανάθεση Επιτροπής";
+             button.className = "btn-small";
+             button.id = "assignmentBtn";
+             document.getElementById("actionButtons").appendChild(button);
+          }
         })
         .catch((err) => {
           alert("⛔ Σφάλμα στην ανάκτηση δεδομένων");
