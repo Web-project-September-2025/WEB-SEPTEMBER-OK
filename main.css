@@ -322,3 +322,39 @@ body.student-dashboard {
   border-bottom: 1px solid rgba(255, 255, 255, 0.3);
   padding-bottom: 0.5rem;
 }
+
+#examBtn {
+  position: absolute;
+  bottom: 30px;
+  left: 1300px;
+  padding: 10px 20px;
+  background-color: #0e6ba8;
+  color: white;
+  text-decoration: none;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+#examBtn:hover {
+  background-color: #094e80;
+}
+
+#assignmentBtn {
+  position: absolute;
+  bottom: 30px;
+  left: 1300px;
+  padding: 10px 20px;
+  background-color: #0e6ba8;
+  color: white;
+  text-decoration: none;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+#assignmentBtn:hover {
+  background-color: #094e80;
+}
