@@ -130,3 +130,42 @@ app.post("/requests", (req, res) => {
   });
 });
 
+// Υποβολή στοιχείων εξέτασης 
+app.post("/examination", (req, res) => {
+  const {
+    ThesisID,
+    FileURL,
+    LinkURL,
+    ExamDate,
+    ExamMethod,
+    Location,
+  } = req.body;
+
+  // Πρώτα καταχωρεί στον πίνακα submissions
+  const submissionSql = `INSERT INTO submissions (ThesisID, FileURL, LinkURL, DateUploaded) VALUES (?, ?, ?, NOW())`;
+  db.query(submissionSql, [ThesisID, FileURL, LinkURL], (err) => {
+    if (err) {
+      console.error("Σφάλμα submission:", err);
+      return res.status(500).send("Submission error");
+    }
+
+    // Μετά αποθηκεύει στον πίνακα exam
+    const examSql = `
+      INSERT INTO exam (ThesisID, ExamDate, ExamMethod, Location)
+      VALUES (?, ?, ?, ?)
+    `;
+    db.query(
+      examSql,
+      [ThesisID, ExamDate, ExamMethod, Location],
+      (err) => {
+        if (err) {
+          console.error("Σφάλμα exam:", err);
+          return res.status(500).send("Exam error");
+        }
+
+        res.json({ message: "Επιτυχής καταχώρηση" });
+      }
+    );
+  });
+});
+
