@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Επεξεργασία Θέματος</title>
+  <link rel="stylesheet" href="styles/main.css" />
+  <script defer src="edit-topic.js"></script>
+</head>
+<body class="professor-dashboard">
+
+  <!-- Logo & Γραμμή -->
+  <div class="overlay-logo">
+    <img src="images/logo.png" alt="logo" class="logo" />
+    <div class="top-line"></div>
+  </div>
+
+  <!-- Τίτλος -->
+  <div class="top-right-title">
+    <h2>Επεξεργασία Θέματος</h2>
+  </div>
+
+  <!-- Φόρμα Επεξεργασίας -->
+  <section class="form-section">
+    <form id="editTopicForm">
+      <label for="title">Τίτλος Θέματος:</label><br />
+      <input type="text" id="title" name="title" required /><br /><br />
+
+      <label for="summary">Σύνοψη:</label><br />
+      <textarea id="summary" name="summary" rows="4" required></textarea><br /><br />
+
+      <label for="pdfFile">Επισύναψη PDF (προαιρετικά):</label><br />
+      <input type="file" id="pdfFile" name="pdfFile" accept="application/pdf" /><br />
+      <p id="currentPdf"></p><br />
+
+      <button type="submit" class="btn-small"> Αποθήκευση</button>
+      <button type="button" id="deleteBtn" class="btn-small" style="background-color: #ffdddd; color: red; margin-left: 10px;"> Διαγραφή</button>
+    </form>
+  </section>
+
+  <!-- Κουμπί επιστροφής -->
+  <button class="logout-btn" onclick="window.location.href='professor-dashboard.html'"> Επιστροφή</button>
+
+</body>
+</html>

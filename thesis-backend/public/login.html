@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Είσοδος</title>
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body class="custom-landing">
+
+  <!-- Logo & γραμμή -->
+  <div class="overlay-logo">
+    <img src="images/logo.png" alt="logo" class="logo" />
+    <div class="top-line"></div>
+  </div>
+
+  <!-- Φόρμα στο κέντρο -->
+  <div class="login-box">
+    <h2>Είσοδος στην Πλατφόρμα</h2>
+    <form id="login-form">
+      <label for="email">Email:</label>
+      <input type="text" id="email" name="email" required />
+
+      <label for="password">Κωδικός πρόσβασης:</label>
+      <input type="password" id="password" name="password" required />
+
+      <label for="role">Επιλογή ρόλου:</label>
+      <select id="role" name="role" required>
+        <option value="">-- Επιλέξτε ρόλο --</option>
+        <option value="student">Φοιτητής</option>
+        <option value="professor">Διδάσκων</option>
+        <option value="secretary">Γραμματεία</option>
+      </select>
+
+      <button type="submit" id="loginBtn" class="btn">Σύνδεση</button>
+    </form>
+  </div>
+   
+  <div id="thesis-container"></div>
+
+  <!-- <script>
+    document.getElementById("login-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const role = document.getElementById("role").value;
+
+      if (role === "student") {
+        window.location.href = "student-dashboard.html";
+      } else if (role === "professor") {
+        window.location.href = "professor-dashboard.html";
+      } else if (role === "secretary") {
+        window.location.href = "admin-dashboard.html";
+      } else {
+        alert("Παρακαλώ επιλέξτε ρόλο!");
+      }
+    });
+  </script> -->
+
+  <script>
+    document.getElementById("loginBtn").addEventListener("click", function (e) {
+    e.preventDefault();
+
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const role = document.getElementById("role").value;
+
+    fetch("http://localhost:3000/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password, role }),
+    })
+     .then((res) => {
+       if (!res.ok) {
+         throw new Error("Λανθασμένα στοιχεία!");
+       }
+       return res.json();
+ })
+      .then((user) => {
+        console.log("✅ Επιτυχής σύνδεση", user);
+        // Αποθήκευσε user info τοπικά αν θες
+        localStorage.setItem("user", JSON.stringify(user));
+
+        // Κάνε redirect βάση ρόλου
+        if (user.Role === "STUDENT") {
+          window.location.href = "student-dashboard.html";
+        } else if (user.Role === "PROFESSOR") {
+          window.location.href = "professor-dashboard.html";
+        }
+      })
+       .catch((err) => {
+        alert("⛔ Σφάλμα: " + err.message);
+      });
+  });
+  </script>
+
+</body>
+</html>
