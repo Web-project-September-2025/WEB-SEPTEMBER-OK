@@ -472,7 +472,7 @@ margin: 0;
 
 .form-section {
   position: absolute;
-  top: 140px; /* Πόσο κάτω από την κορυφή να εμφανιστεί */
+  top: 170px; /* Πόσο κάτω από την κορυφή να εμφανιστεί */
   left: 50%;
   transform: translateX(-50%);
   background-color: rgba(255, 255, 255, 0.08);
@@ -507,7 +507,7 @@ margin: 0;
 
 .thesis-list {
   position: absolute;
-  top: 450px;        
+  top: 470px;        
   left: 60px;
   right: 60px;
 }
