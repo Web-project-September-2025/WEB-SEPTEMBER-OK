@@ -20,8 +20,10 @@ async function fetchTopicsFromBackend() {
   // Βεβαιώσου ότι κάθε θέμα έχει ThesisID
   return data.map(t => {
     if (!t.ThesisID && t.id) t.ThesisID = t.id;
-    return t;
-  });
+    t.assignedTo = t.StudentID;
+  t.confirmed = t.Confirmed;
+  return t;
+});
 }
 
 // Προσοχή: το αντικείμενο topics έχει id, title, professorName, assignedTo, confirmed
@@ -44,7 +46,7 @@ searchStudentForm.addEventListener('submit', async e => {
     const found = await res.json();
     if (!found || found.length === 0) {
       studentResult.innerHTML = '<p>Δεν βρέθηκε φοιτητής.</p>';
-   assignSection.style.display = 'none';
+      assignSection.style.display = 'none';
       currentStudent = null;
       return;
     }
@@ -63,14 +65,18 @@ searchStudentForm.addEventListener('submit', async e => {
 
 async function renderAvailableTopics() {
   availableTopicsList.innerHTML = '';
-  
 
-  // Φέρε τον logged-in καθηγητή
   const user = JSON.parse(localStorage.getItem('user'));
-  // Εμφάνιση μόνο θεμάτων που είναι διαθέσιμα για ανάθεση ΚΑΙ ανήκουν στον καθηγητή
-  const available = topics.filter(
-    t => (!t.confirmed && (!t.assignedTo || t.assignedTo === currentStudent.am))
+  console.log('Όλα τα topics:', topics);
+const available = topics.filter(t =>
+  Number(t.ProfessorID) === Number(user.UserID) &&
+  t.Status === 'UNDER-ASSIGNMENT' &&
+  (t.confirmed === 0 || t.confirmed === '0' || t.confirmed === false || t.confirmed === undefined)
 );
+
+ 
+console.log('Διαθέσιμα θέματα:', available);
+
 
 
   if (available.length === 0) {
@@ -99,6 +105,7 @@ async function renderAvailableTopics() {
       alert('Το θέμα ανατέθηκε προσωρινά στον φοιτητή.');
       topics = await fetchTopicsFromBackend();
       renderAvailableTopics();
+      checkShowCommitteeSection(); // Εμφάνιση φόρμας επιτροπής αν υπάρχει προσωρινή ανάθεση
     });
     availableTopicsList.appendChild(div);
   }

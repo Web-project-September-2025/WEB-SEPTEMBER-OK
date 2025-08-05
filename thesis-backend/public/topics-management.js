@@ -76,9 +76,33 @@ addTopicForm.addEventListener('submit', event => {
 });
 
 function addNewTopic(title, summary, pdfName, pdfData) {
-    topics.push({title, summary, pdfName, pdfData});
-    localStorage.setItem('topics', JSON.stringify(topics));
-    renderTopics();
-    addTopicForm.reset();
-    alert('Το θέμα προστέθηκε!');
+  const user = JSON.parse(localStorage.getItem('user')); // Πάρε τα στοιχεία του καθηγητή
+
+  function generateUniqueId() {
+  return Date.now() + Math.floor(Math.random() * 1000); // απλό μοναδικό id με timestamp + τυχαίο αριθμό
+}
+
+  const newTopic = {
+    title,
+    summary,
+    pdfName,
+    pdfData,
+    Status: 'UNDER-ASSIGNMENT',
+    ProfessorID: user?.UserID || null,
+    ProfessorName: user?.Name || 'Άγνωστος',
+    StartDate: new Date().toISOString(),
+    EndDate: null,
+    StudentID: null,
+    Progress: 0,
+    RepositoryLink: '',
+    ThesisID: generateUniqueId(), // Προαιρετικά αν θες id
+    assignedTo: null,
+    confirmed: false
+  };
+
+  topics.push(newTopic);
+  localStorage.setItem('topics', JSON.stringify(topics));
+  renderTopics();
+  addTopicForm.reset();
+  alert('Το θέμα προστέθηκε!');
 }
