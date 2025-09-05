@@ -43,6 +43,7 @@
       fetch(`http://localhost:3000/thesis/${thesisId}`)
         .then((res) => res.json())
         .then((thesis) => {
+          console.log("STATUS FROM API:", thesis.Status);
           document.getElementById("thesisTitle").textContent = thesis.Title;
           document.getElementById("thesisDescription").textContent = thesis.Description;
           document.getElementById("thesisProfessor").textContent = thesis.ProfessorName || "—";
