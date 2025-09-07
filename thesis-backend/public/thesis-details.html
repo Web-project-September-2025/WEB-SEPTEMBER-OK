@@ -8,18 +8,15 @@
 </head>
 <body class="student-dashboard">
 
-  <!-- Logo & λευκή γραμμή -->
   <div class="overlay-logo">
     <img src="images/logo.png" alt="logo" class="logo" />
     <div class="top-line"></div>
   </div>
 
-  <!-- Τίτλος πάνω δεξιά -->
   <div class="top-right-title">
     <h2>Λεπτομέρειες Διπλωματικής</h2>
   </div>
 
-  <!-- Περιεχόμενο διπλωματικής -->
   <div class="thesis-details-box">
     <h3 id="thesisTitle"></h3>
     <p><strong>Περιγραφή:</strong> <span id="thesisDescription"></span></p>
@@ -28,14 +25,14 @@
     <p><strong>Λήξη:</strong> <span id="endDate"></span></p>
     <p><strong>Πρόοδος:</strong> <span id="progress"></span>%</p>
     <p><strong>Repository Link:</strong> <span id="repo"></span></p>
+    <p id="pdfRow" style="display:none;"><strong>PDF:</strong> <a id="pdfLink" href="#" target="_blank" rel="noopener">Άνοιγμα</a></p>
   </div>
-  
+
   <div id="actionButtons" class="assignmentBtn"></div>
-  
-  <!-- Κουμπί Επιστροφή -->
+
   <button class="logout-btn" onclick="window.history.back()">Επιστροφή⬅</button>
 
- <script>
+  <script>
     document.addEventListener("DOMContentLoaded", () => {
       const params = new URLSearchParams(window.location.search);
       const thesisId = params.get("id");
@@ -43,31 +40,37 @@
       fetch(`http://localhost:3000/thesis/${thesisId}`)
         .then((res) => res.json())
         .then((thesis) => {
-          console.log("STATUS FROM API:", thesis.Status);
           document.getElementById("thesisTitle").textContent = thesis.Title;
           document.getElementById("thesisDescription").textContent = thesis.Description;
           document.getElementById("thesisProfessor").textContent = thesis.ProfessorName || "—";
-          document.getElementById("startDate").textContent = thesis.StartDate;
-          document.getElementById("endDate").textContent = thesis.EndDate;
-          document.getElementById("progress").textContent = thesis.Progress;
-          document.getElementById("repo").textContent = thesis.RepositoryLink;
+          document.getElementById("startDate").textContent = thesis.StartDate || "—";
+          document.getElementById("endDate").textContent = thesis.EndDate || "—";
+          document.getElementById("progress").textContent = thesis.Progress ?? "0";
+          document.getElementById("repo").textContent = thesis.RepositoryLink || "—";
+
+          if (thesis.PdfPath) {
+            const pdfRow = document.getElementById("pdfRow");
+            const pdfLink = document.getElementById("pdfLink");
+            pdfLink.href = `http://localhost:3000${thesis.PdfPath}`;
+            pdfRow.style.display = "block";
+          }
 
           if (thesis.Status === "UNDER-EXAMINATION") {
-             const button = document.createElement("a");
-             button.href = `examination.html?id=${thesis.ThesisID}`;
-             button.textContent = "Καταχώρηση Εξέτασης";
-             button.className = "btn-small";
-             button.id = "examBtn";
-             document.getElementById("actionButtons").appendChild(button);
+            const button = document.createElement("a");
+            button.href = `examination.html?id=${thesis.ThesisID}`;
+            button.textContent = "Καταχώρηση Εξέτασης";
+            button.className = "btn-small";
+            button.id = "examBtn";
+            document.getElementById("actionButtons").appendChild(button);
           }
-           
+
           if (thesis.Status === "UNDER-ASSIGNMENT") {
-             const button = document.createElement("a");
-             button.href = `under-assignment.html?id=${thesis.ThesisID}`;
-             button.textContent = "Ανάθεση Επιτροπής";
-             button.className = "btn-small";
-             button.id = "assignmentBtn";
-             document.getElementById("actionButtons").appendChild(button);
+            const button = document.createElement("a");
+            button.href = `under-assignment.html?id=${thesis.ThesisID}`;
+            button.textContent = "Ανάθεση Επιτροπής";
+            button.className = "btn-small";
+            button.id = "assignmentBtn";
+            document.getElementById("actionButtons").appendChild(button);
           }
         })
         .catch((err) => {

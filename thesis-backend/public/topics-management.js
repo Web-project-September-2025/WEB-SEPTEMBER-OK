@@ -1,113 +1,116 @@
-// Απλή προσωρινή αποθήκευση θεμάτων (θα μπορούσε να είναι fetch σε backend)
-let topics = [];
+// topics-management.js
 
-// Στοιχεία DOM
 const topicsList = document.getElementById('topicsList');
 const addTopicForm = document.getElementById('addTopicForm');
 
-// Φόρτωση θεμάτων από localStorage (αν υπάρχει)
-if(localStorage.getItem('topics')) {
-    topics = JSON.parse(localStorage.getItem('topics'));
-    renderTopics();
+const API_BASE = 'http://localhost:3000';
+
+function authHeader() {
+  const token = localStorage.getItem('authToken');
+  return token ? { 'Authorization': 'Bearer ' + token } : {};
 }
 
-// Συνάρτηση για εμφάνιση λίστας θεμάτων
-function renderTopics() {
-    topicsList.innerHTML = '';
-    if(topics.length === 0) {
-        topicsList.innerHTML = '<li>Δεν υπάρχουν θέματα.</li>';
-        return;
-    }
-
-topicsList.appendChild(topicRow);
-        topics.forEach((topic, index) => {
-                const topicRow = document.createElement('div');
-                topicRow.classList.add('thesis-row'); // Θα το στυλάρουμε με CSS
-
-                // Αν το θέμα έχει πεδία από backend, χρησιμοποίησε Title/Description
-                const title = topic.Title || topic.title || 'Χωρίς τίτλο';
-                const summary = topic.Description || topic.summary || '';
-
-                topicRow.innerHTML = `
-                    <div class="thesis-title">${title}</div>
-                    <div class="thesis-actions">
-                        <button data-index="${index}" class="editBtn">Επεξεργασία</button>
-                    </div>
-                `;
-
-                topicsList.appendChild(topicRow);
-        });
-
-    // Προσθήκη event listeners στα κουμπιά επεξεργασίας
-    document.querySelectorAll('.editBtn').forEach(button => {
-        button.addEventListener('click', event => {
-            const idx = event.target.getAttribute('data-index');
-            localStorage.setItem('editTopicIndex', idx);
-            window.location.href = 'edit-topic.html';
-        });
-    });
+function ensureProfessor() {
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  if (!user || user.Role !== 'PROFESSOR') {
+    alert('Μόνο για Διδάσκοντες.');
+    window.location.href = 'login.html';
+  }
 }
 
-// Χειριστής προσθήκης νέου θέματος
-addTopicForm.addEventListener('submit', event => {
-    event.preventDefault();
+ensureProfessor();
+loadTopics();
 
-    const title = addTopicForm.title.value.trim();
-    const summary = addTopicForm.summary.value.trim();
-    const pdfInput = addTopicForm.pdfFile;
+function loadTopics() {
+  topicsList.innerHTML = '<div class="empty">Φόρτωση…</div>';
+  fetch(`${API_BASE}/professor/topics`, {
+    headers: { ...authHeader() }
+  })
+  .then(res => {
+    if (!res.ok) throw new Error('Αποτυχία φόρτωσης');
+    return res.json();
+  })
+  .then(topics => renderTopics(topics))
+  .catch(err => {
+    console.error(err);
+    topicsList.innerHTML = '<div class="empty">Σφάλμα φόρτωσης.</div>';
+  });
+}
 
-    if(!title || !summary) {
-        alert('Παρακαλώ συμπληρώστε τίτλο και σύνοψη.');
-        return;
-    }
+function renderTopics(topics) {
+  topicsList.innerHTML = '';
+  if (!Array.isArray(topics) || topics.length === 0) {
+    topicsList.innerHTML = '<div class="empty">Δεν υπάρχουν θέματα.</div>';
+    return;
+  }
 
-    // Αν έχει επιλεγεί PDF, το διαβάζουμε σαν base64
-    if(pdfInput.files.length > 0) {
-        const file = pdfInput.files[0];
-        if(file.type !== 'application/pdf') {
-            alert('Παρακαλώ επιλέξτε αρχείο PDF.');
-            return;
-        }
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const pdfData = e.target.result; // base64
-            addNewTopic(title, summary, file.name, pdfData);
-        };
-        reader.readAsDataURL(file);
-    } else {
-        // Χωρίς PDF
-        addNewTopic(title, summary, null, null);
-    }
+  topics.forEach((topic) => {
+    const row = document.createElement('div');
+    row.classList.add('thesis-row');
+
+    const title = topic.Title || 'Χωρίς τίτλο';
+    const status = topic.Status || '—';
+
+    row.innerHTML = `
+      <div class="thesis-title">${title}</div>
+      <div class="thesis-status">${status}</div>
+      <div class="thesis-actions">
+        <button type="button" data-id="${topic.ThesisID}" class="editBtn">Επεξεργασία</button>
+        <button type="button" data-id="${topic.ThesisID}" class="deleteBtn">Διαγραφή</button>
+        ${topic.PdfPath ? `<a class="btn-small" href="http://localhost:3000${topic.PdfPath}" target="_blank" rel="noopener">PDF</a>` : ''}
+      </div>
+    `;
+    topicsList.appendChild(row);
+  });
+}
+
+// Event delegation για τα δυναμικά κουμπιά
+topicsList.addEventListener('click', (e) => {
+  const editBtn = e.target.closest('.editBtn');
+  if (editBtn) {
+    const id = editBtn.getAttribute('data-id');
+    localStorage.setItem('editTopicId', id);
+    window.location.href = 'edit-topic.html';
+    return;
+  }
+
+  const delBtn = e.target.closest('.deleteBtn');
+  if (delBtn) {
+    const id = delBtn.getAttribute('data-id');
+    if (!confirm('Σίγουρα θέλεις να διαγράψεις το θέμα;')) return;
+
+    fetch(`${API_BASE}/professor/topics/${id}`, {
+      method: 'DELETE',
+      headers: { ...authHeader() }
+    })
+    .then(res => {
+      if (!res.ok) {
+        return res.text().then(t => { throw new Error(t || 'Αποτυχία διαγραφής'); });
+      }
+      loadTopics();
+    })
+    .catch(err => alert('Error ' + err.message));
+  }
 });
 
-function addNewTopic(title, summary, pdfName, pdfData) {
-    const user = JSON.parse(localStorage.getItem('user')); // Πάρε τα στοιχεία του καθηγητή
+// Προσθήκη νέου θέματος
+addTopicForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const formData = new FormData(addTopicForm); // title, summary, pdfFile
 
-    function generateUniqueId() {
-        return Date.now() + Math.floor(Math.random() * 1000); // απλό μοναδικό id με timestamp + τυχαίο αριθμό
-    }
-
-    const newTopic = {
-        title,
-        summary,
-        pdfName,
-        pdfData,
-        Status: 'UNDER-ASSIGNMENT',
-        ProfessorID: user?.UserID || null,
-        ProfessorName: user?.Name || 'Άγνωστος',
-        StartDate: new Date().toISOString(),
-        EndDate: null,
-        StudentID: null,
-        Progress: 0,
-        RepositoryLink: '',
-        ThesisID: generateUniqueId(), // Προαιρετικά αν θες id
-        assignedTo: null,
-        confirmed: false
-    };
-
-            topics.push(newTopic);
-            localStorage.setItem('topics', JSON.stringify(topics));
-            renderTopics();
-            addTopicForm.reset();
-            alert('Το θέμα προστέθηκε!');
-}
+  fetch(`${API_BASE}/professor/topics`, {
+    method: 'POST',
+    headers: { ...authHeader() }, // ΜΗΝ ορίσεις Content-Type για multipart
+    body: formData
+  })
+  .then(res => {
+    if (!res.ok) throw new Error('Αποτυχία δημιουργίας');
+    return res.json();
+  })
+  .then(() => {
+    addTopicForm.reset();
+    alert('Το θέμα προστέθηκε!');
+    loadTopics();
+  })
+  .catch(err => alert('Σφάλμα: ' + err.message));
+});

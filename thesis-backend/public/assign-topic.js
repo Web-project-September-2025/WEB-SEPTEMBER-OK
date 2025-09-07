@@ -1,208 +1,261 @@
+// assign-topic.js
+
+const API_BASE = 'http://localhost:3000';
+
+function authHeader() {
+  const token = localStorage.getItem('authToken');
+  return token ? { 'Authorization': 'Bearer ' + token } : {};
+}
+
 let topics = [];
 let currentStudent = null;
 
+// DOM
+const searchWrap = document.getElementById('searchWrap');
+const assignWrap = document.getElementById('assignWrap');
 const searchStudentForm = document.getElementById('searchStudentForm');
 const searchInput = document.getElementById('searchInput');
-const studentResult = document.getElementById('studentResult');
-const assignSection = document.querySelector('.assign-topic-section');
-const availableTopicsList = document.getElementById('availableTopicsList');
-const cancelAssignmentBtn = document.getElementById('cancelAssignmentBtn');
+const studentMatches = document.getElementById('studentMatches');
+const studentInfo = document.getElementById('studentInfo');
 
-// === Αντί για localStorage, φέρε τα topics από backend ===
-async function fetchTopicsFromBackend() {
-  // Φέρε τον logged-in καθηγητή
-  const user = JSON.parse(localStorage.getItem('user'));
-  if (!user || !user.UserID) return [];
-  // Ζήτα μόνο τα θέματα του συγκεκριμένου καθηγητή
-  const res = await fetch(`http://localhost:3000/thesis?professorId=${user.UserID}`);
+const availableTopicsList = document.getElementById('availableTopicsList');
+const provisionalList = document.getElementById('provisionalList');
+const cancelAllBtn = document.getElementById('cancelAllBtn');
+
+function ensureProfessor() {
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  if (!user || user.Role !== 'PROFESSOR') {
+    alert('Μόνο για Διδάσκοντες.');
+    window.location.href = 'login.html';
+  }
+}
+ensureProfessor();
+
+const me = JSON.parse(localStorage.getItem('user') || 'null');
+
+// Φέρνουμε θέματα ΜΟΝΟ UNDER-ASSIGNMENT του καθηγητή
+async function fetchProfessorAssignable() {
+  const res = await fetch(`${API_BASE}/professor/topics?onlyAssignable=1`, {
+    headers: { ...authHeader() }
+  });
   if (!res.ok) return [];
-  const data = await res.json();
-  // Βεβαιώσου ότι κάθε θέμα έχει ThesisID
-  return data.map(t => {
-    if (!t.ThesisID && t.id) t.ThesisID = t.id;
-    t.assignedTo = t.StudentID;
-  t.confirmed = t.Confirmed;
-  return t;
-});
+  return res.json();
 }
 
-// Προσοχή: το αντικείμενο topics έχει id, title, professorName, assignedTo, confirmed
+// Φέρνουμε ΟΛΑ του καθηγητή (για να φιλτράρουμε τα προσωρινά)
+async function fetchAllProfessorTheses() {
+  const res = await fetch(`${API_BASE}/professor/topics`, {
+    headers: { ...authHeader() }
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
 
-// === Αναζήτηση φοιτητή με error handling στο frontend ===
-searchStudentForm.addEventListener('submit', async e => {
+function showAssignPanels() {
+  searchWrap.style.display = 'none';
+  assignWrap.style.display = 'block';
+}
+
+// ---- Αναζήτηση & επιλογή φοιτητή ----
+searchStudentForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const query = searchInput.value.trim();
-  if (!query) return;
+  const q = searchInput.value.trim();
+  if (!q) return;
+
+  studentMatches.textContent = 'Αναζήτηση...';
+  studentInfo.textContent = '';
 
   try {
-    const res = await fetch(`http://localhost:3000/students?q=${encodeURIComponent(query)}`);
+    const res = await fetch(`${API_BASE}/students?q=${encodeURIComponent(q)}`, {
+      headers: { ...authHeader() }
+    });
     if (!res.ok) {
-      const errData = await res.json();
-      studentResult.innerHTML = `<p style='color: #ff4444;'>${errData.message || 'Σφάλμα αναζήτησης.'}</p>`;
-      assignSection.style.display = 'none';
-      currentStudent = null;
+      const e = await res.json().catch(() => ({}));
+      studentMatches.innerHTML = `<p style="color:#ff6b6b">${e.message || 'Σφάλμα αναζήτησης.'}</p>`;
       return;
     }
-    const found = await res.json();
-    if (!found || found.length === 0) {
-      studentResult.innerHTML = '<p>Δεν βρέθηκε φοιτητής.</p>';
-      assignSection.style.display = 'none';
-      currentStudent = null;
+    const students = await res.json();
+    if (!students || students.length === 0) {
+      studentMatches.innerHTML = '<p>Δεν βρέθηκε φοιτητής.</p>';
       return;
     }
-    currentStudent = { am: found[0].UserID, name: found[0].UserName };
-    studentResult.innerHTML = `<p>Φοιτητής: ${currentStudent.name} (ΑΜ: ${currentStudent.am})</p>`;
-    assignSection.style.display = 'block';
-    // === Φέρε τα topics από backend ===
-    topics = await fetchTopicsFromBackend();
-    renderAvailableTopics();
+
+    const ul = document.createElement('ul');
+    ul.style.listStyle = 'none';
+    ul.style.margin = '0';
+    ul.style.padding = '0';
+
+    students.forEach(s => {
+      const li = document.createElement('li');
+      li.style.margin = '6px 0';
+      const am = s.AM ? `AM: ${s.AM}` : `ID: ${s.UserID}`;
+      li.innerHTML = `
+        <span>${s.UserName} (${am})</span>
+        <button class="btn-small" data-id="${s.UserID}" data-am="${s.AM || ''}" style="margin-left:10px;">Επιλογή</button>
+      `;
+      ul.appendChild(li);
+    });
+
+    studentMatches.innerHTML = '';
+    studentMatches.appendChild(ul);
+
+    ul.onclick = async (ev) => {
+      const btn = ev.target.closest('button[data-id]');
+      if (!btn) return;
+      const uid = Number(btn.getAttribute('data-id'));
+      const am = btn.getAttribute('data-am') || '';
+      currentStudent = { userId: uid, am };
+
+      const picked = students.find(x => x.UserID === uid);
+      studentInfo.innerHTML = `<strong>Επιλεγμένος φοιτητής:</strong> ${picked.UserName} (${am ? 'AM: '+am : 'ID: '+uid})`;
+
+      // Φόρτωσε panels και εμφάνισέ τα
+      await loadPanels();
+      showAssignPanels();
+    };
+
   } catch (err) {
-    studentResult.innerHTML = `<p style='color: #ff4444;'>Σφάλμα επικοινωνίας με τον server.</p>`;
-    assignSection.style.display = 'none';
-    currentStudent = null;
+    console.error(err);
+    studentMatches.innerHTML = `<p style="color:#ff6b6b">Σφάλμα επικοινωνίας.</p>`;
   }
 });
 
-async function renderAvailableTopics() {
+// ---- Panels ----
+async function loadPanels() {
+  // Αριστερά: διαθέσιμα (UNDER-ASSIGNMENT)
+  topics = await fetchProfessorAssignable();
+  renderAvailable();
+
+  // Δεξιά: προσωρινά του συγκεκριμένου φοιτητή
+  const all = await fetchAllProfessorTheses();
+  renderProvisional(all);
+}
+
+function renderAvailable() {
   availableTopicsList.innerHTML = '';
-
-  const user = JSON.parse(localStorage.getItem('user'));
-  console.log('Όλα τα topics:', topics);
-const available = topics.filter(t =>
-  Number(t.ProfessorID) === Number(user.UserID) &&
-  t.Status === 'UNDER-ASSIGNMENT' &&
-  (t.confirmed === 0 || t.confirmed === '0' || t.confirmed === false || t.confirmed === undefined)
-);
-
- 
-console.log('Διαθέσιμα θέματα:', available);
-
-
-
-  if (available.length === 0) {
-    availableTopicsList.innerHTML = '<p>Δεν υπάρχουν διαθέσιμα θέματα για προσωρινή ανάθεση.</p>';
-    cancelAssignmentBtn.style.display = 'none';
+  if (!topics || topics.length === 0) {
+    availableTopicsList.innerHTML = '<p>Δεν υπάρχουν διαθέσιμα θέματα.</p>';
     return;
   }
 
-  for (const topic of available) {
+  const frag = document.createDocumentFragment();
+  topics.forEach(t => {
     const div = document.createElement('div');
-    div.classList.add('topic-item');
+    div.className = 'topic-item';
     div.innerHTML = `
-      <strong>${topic.Title}</strong><br/>
-      <span>${topic.Description || ''}</span><br/>
-      <button class="assignBtn">Προσωρινή Ανάθεση</button>
+      <strong>${t.Title}</strong><br/>
+      <span>${t.Description || ''}</span><br/>
+      <div class="btn-row">
+        <button class="btn-small" data-assign="${t.ThesisID}">Προσωρινή Ανάθεση</button>
+      </div>
     `;
-    div.querySelector('button').addEventListener('click', async () => {
-      // Επιβεβαίωση ανάθεσης με modal
-      const confirmAssign = await showConfirmModal('Επιβεβαιώνετε την προσωρινή ανάθεση του θέματος στον φοιτητή;');
-      if (!confirmAssign) return;
-      await fetch(`http://localhost:3000/thesis/${topic.ThesisID}/assign`, {
+    frag.appendChild(div);
+  });
+  availableTopicsList.appendChild(frag);
+
+  availableTopicsList.onclick = async (e) => {
+    const btn = e.target.closest('button[data-assign]');
+    if (!btn) return;
+    const thesisId = btn.getAttribute('data-assign');
+
+    const ok = await confirmModal('Επιβεβαιώνετε την προσωρινή ανάθεση του θέματος στον φοιτητή;');
+    if (!ok) return;
+
+    try {
+      const resp = await fetch(`${API_BASE}/thesis/${thesisId}/assign`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentId: currentStudent.am }),
+        headers: { 'Content-Type': 'application/json', ...authHeader() },
+        body: JSON.stringify({ studentId: currentStudent.userId }),
       });
-      alert('Το θέμα ανατέθηκε προσωρινά στον φοιτητή.');
-      topics = await fetchTopicsFromBackend();
-      renderAvailableTopics();
-      checkShowCommitteeSection(); // Εμφάνιση φόρμας επιτροπής αν υπάρχει προσωρινή ανάθεση
-    });
-    availableTopicsList.appendChild(div);
-  }
-  cancelAssignmentBtn.style.display = 'none';
+      if (!resp.ok) {
+        const e = await resp.json().catch(()=>({}));
+        alert(e.message || 'Αποτυχία ανάθεσης.');
+        return;
+      }
+      await loadPanels();
+      alert('Το θέμα ανατέθηκε προσωρινά.');
+    } catch (err) {
+      alert('Σφάλμα επικοινωνίας.');
+    }
+  };
 }
 
-cancelAssignmentBtn.addEventListener('click', async () => {
-  if (!currentStudent) return;
-  for (const topic of topics) {
-    if (topic.assignedTo === currentStudent.am && !topic.confirmed) {
-      topic.assignedTo = null;
-      topic.confirmed = false;
-      await fetch(`http://localhost:3000/thesis/${topic.ThesisID}/assign`, {
+function renderProvisional(allTheses) {
+  provisionalList.innerHTML = '';
+
+  // Φίλτρο: του τρέχοντα καθηγητή + UNDER-ASSIGNMENT + StudentID = selected + προσωρινό
+  const provisional = (allTheses || []).filter(t =>
+    t.ProfessorID === me.UserID &&
+    t.Status === 'UNDER-ASSIGNMENT' &&
+    t.StudentID === currentStudent.userId &&
+    Number(t.AssignmentConfirmed) === 0
+  );
+
+  if (provisional.length === 0) {
+    provisionalList.innerHTML = '<p>Δεν υπάρχουν προσωρινές αναθέσεις για αυτόν τον φοιτητή.</p>';
+    cancelAllBtn.style.display = 'none';
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  provisional.forEach(t => {
+    const div = document.createElement('div');
+    div.className = 'topic-item';
+    div.innerHTML = `
+      <strong>${t.Title}</strong> <span class="pill">PROVISIONAL</span><br/>
+      <span>${t.Description || ''}</span><br/>
+      <div class="btn-row">
+        <button class="btn-small danger" data-cancel="${t.ThesisID}">Ακύρωση Ανάθεσης</button>
+      </div>
+    `;
+    frag.appendChild(div);
+  });
+  provisionalList.appendChild(frag);
+
+  provisionalList.onclick = async (e) => {
+    const btn = e.target.closest('button[data-cancel]');
+    if (!btn) return;
+    const thesisId = btn.getAttribute('data-cancel');
+
+    const ok = await confirmModal('Να ακυρωθεί η προσωρινή ανάθεση;');
+    if (!ok) return;
+
+    try {
+      const resp = await fetch(`${API_BASE}/thesis/${thesisId}/assign`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeader() },
+        body: JSON.stringify({ studentId: null }),
+      });
+      if (!resp.ok) {
+        const e = await resp.json().catch(()=>({}));
+        alert(e.message || 'Αποτυχία ακύρωσης.');
+        return;
+      }
+      await loadPanels();
+      alert('Η προσωρινή ανάθεση ακυρώθηκε.');
+    } catch (err) {
+      alert('Σφάλμα επικοινωνίας.');
+    }
+  };
+
+  cancelAllBtn.style.display = 'inline-block';
+  cancelAllBtn.onclick = async () => {
+    const ok = await confirmModal('Να ακυρωθούν όλες οι προσωρινές αναθέσεις για τον φοιτητή;');
+    if (!ok) return;
+    for (const t of provisional) {
+      await fetch(`${API_BASE}/thesis/${t.ThesisID}/assign`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...authHeader() },
         body: JSON.stringify({ studentId: null }),
       });
     }
-  }
-  // localStorage.setItem('topics', JSON.stringify(topics));
-  alert('Όλες οι προσωρινές αναθέσεις ακυρώθηκαν.');
-  renderAvailableTopics();
-});
-
-// === Επιτροπή: Πρόσκληση μελών ===
-const committeeSection = document.querySelector('.committee-invite-section');
-const inviteCommitteeForm = document.getElementById('inviteCommitteeForm');
-const professorSelect1 = document.getElementById('professorSelect1');
-const professorSelect2 = document.getElementById('professorSelect2');
-const inviteCommitteeMsg = document.getElementById('inviteCommitteeMsg');
-
-let availableProfessors = [];
-let selectedThesisId = null;
-
-// Εμφάνιση φόρμας επιτροπής όταν γίνει προσωρινή ανάθεση
-async function showCommitteeInvite(thesisId, excludeProfessorId) {
-  console.log('[DEBUG] showCommitteeInvite()', thesisId, excludeProfessorId);
-  // Φέρε όλους τους καθηγητές εκτός του επιβλέποντα
-  const res = await fetch('http://localhost:3000/professors');
-  const profs = await res.json();
-  availableProfessors = profs.filter(p => p.UserID !== excludeProfessorId);
-  // Γέμισε τα select
-  professorSelect1.innerHTML = '<option value="">--Επιλογή--</option>';
-  professorSelect2.innerHTML = '<option value="">--Επιλογή--</option>';
-  availableProfessors.forEach(p => {
-    professorSelect1.innerHTML += `<option value="${p.UserID}">${p.UserName} (${p.Email})</option>`;
-    professorSelect2.innerHTML += `<option value="${p.UserID}">${p.UserName} (${p.Email})</option>`;
-  });
-  professorSelect1.selectedIndex = 0;
-  professorSelect2.selectedIndex = 0;
-  selectedThesisId = thesisId;
-  inviteCommitteeMsg.textContent = '';
-  committeeSection.style.display = 'block';
-  console.log('[DEBUG] committeeSection εμφανίστηκε');
+    await loadPanels();
+    alert('Όλες οι προσωρινές αναθέσεις ακυρώθηκαν.');
+  };
 }
 
-if (inviteCommitteeForm) {
-  inviteCommitteeForm.addEventListener('submit', async e => {
-    e.preventDefault();
-    const prof1 = professorSelect1.value;
-    const prof2 = professorSelect2.value;
-    if (!prof1 || !prof2 || prof1 === prof2) {
-      inviteCommitteeMsg.textContent = 'Επιλέξτε δύο διαφορετικούς καθηγητές.';
-      inviteCommitteeMsg.style.color = '#ff4444';
-      return;
-    }
-    // Αποστολή προσκλήσεων
-    try {
-      const res1 = await fetch('http://localhost:3000/requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ThesisID: selectedThesisId, ProfessorID: prof1 })
-      });
-      const res2 = await fetch('http://localhost:3000/requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ThesisID: selectedThesisId, ProfessorID: prof2 })
-      });
-      if (res1.status === 201 && res2.status === 201) {
-        inviteCommitteeMsg.textContent = 'Οι προσκλήσεις στάλθηκαν επιτυχώς!';
-        inviteCommitteeMsg.style.color = 'green';
-        committeeSection.style.display = 'none';
-      } else {
-        const err1 = await res1.json();
-        const err2 = await res2.json();
-        inviteCommitteeMsg.textContent = (err1.message || '') + ' ' + (err2.message || '');
-        inviteCommitteeMsg.style.color = '#ff4444';
-      }
-    } catch (err) {
-      inviteCommitteeMsg.textContent = 'Σφάλμα αποστολής προσκλήσεων.';
-      inviteCommitteeMsg.style.color = '#ff4444';
-    }
-  });
-}
-
-// === Custom modal confirmation ===
-function showConfirmModal(message) {
+// ---- Modal confirm ----
+function confirmModal(message) {
   return new Promise(resolve => {
     const modal = document.getElementById('confirmModal');
     const text = document.getElementById('confirmModalText');
@@ -210,6 +263,7 @@ function showConfirmModal(message) {
     const noBtn = document.getElementById('confirmNoBtn');
     text.textContent = message;
     modal.style.display = 'flex';
+
     function cleanup(result) {
       modal.style.display = 'none';
       yesBtn.removeEventListener('click', onYes);
@@ -220,182 +274,5 @@ function showConfirmModal(message) {
     function onNo() { cleanup(false); }
     yesBtn.addEventListener('click', onYes);
     noBtn.addEventListener('click', onNo);
-  });
-}
-
-// Απόκρυψη φόρμας επιτροπής όταν αλλάζει φοιτητής ή όταν δεν υπάρχει προσωρινή ανάθεση
-function hideCommitteeInvite() {
-  if (committeeSection) committeeSection.style.display = 'none';
-}
-
-// Κρύψε τη φόρμα όταν δεν υπάρχει προσωρινή ανάθεση
-function checkShowCommitteeSection() {
-  // Αν υπάρχει θέμα προσωρινά ανατεθειμένο στον φοιτητή, δείξε τη φόρμα
-  const assignedTopic = topics.find(
-    t => t.assignedTo === currentStudent?.am && !t.confirmed
-  );
-  if (assignedTopic) {
-    // Βρες τον επιβλέποντα
-    if (assignedTopic.professorId || assignedTopic.professorID) {
-      showCommitteeInvite(assignedTopic.ThesisID, assignedTopic.professorId || assignedTopic.professorID);
-    } else {
-      fetch(`http://localhost:3000/thesis/${assignedTopic.ThesisID}`)
-        .then(res => res.ok ? res.json() : null)
-        .then(thesis => {
-          if (thesis) showCommitteeInvite(assignedTopic.ThesisID, thesis.ProfessorID);
-        });
-    }
-  } else {
-    hideCommitteeInvite();
-  }
-}
-
-// Κρύψε τη φόρμα όταν αλλάζει φοιτητής ή όταν δεν υπάρχει προσωρινή ανάθεση
-searchStudentForm.addEventListener('submit', () => {
-  hideCommitteeInvite();
-});
-
-// === Modal εμφάνιση φόρμας επιτροπής ===
-function showCommitteeModal(thesisId, excludeProfessorId) {
-  // Φέρε όλους τους καθηγητές εκτός του επιβλέποντα
-  fetch('http://localhost:3000/professors')
-    .then(res => res.json())
-    .then(profs => {
-      availableProfessors = profs.filter(p => p.UserID !== excludeProfessorId);
-      professorSelect1.innerHTML = '<option value="">--Επιλογή--</option>';
-      professorSelect2.innerHTML = '<option value="">--Επιλογή--</option>';
-      availableProfessors.forEach(p => {
-        professorSelect1.innerHTML += `<option value="${p.UserID}">${p.UserName} (${p.Email})</option>`;
-        professorSelect2.innerHTML += `<option value="${p.UserID}">${p.UserName} (${p.Email})</option>`;
-      });
-      professorSelect1.selectedIndex = 0;
-      professorSelect2.selectedIndex = 0;
-      selectedThesisId = thesisId;
-      inviteCommitteeMsg.textContent = '';
-      // Εμφάνιση ως modal
-      committeeSection.classList.add('modal');
-      committeeSection.style.display = 'flex';
-      committeeSection.style.position = 'fixed';
-      committeeSection.style.top = '0';
-      committeeSection.style.left = '0';
-      committeeSection.style.width = '100vw';
-      committeeSection.style.height = '100vh';
-      committeeSection.style.justifyContent = 'center';
-      committeeSection.style.alignItems = 'center';
-      committeeSection.style.background = 'rgba(0,0,0,0.5)';
-      // Κλείσιμο modal όταν πατηθεί εκτός φόρμας
-      committeeSection.addEventListener('click', function handler(e) {
-        if (e.target === committeeSection) {
-          committeeSection.style.display = 'none';
-          committeeSection.classList.remove('modal');
-          committeeSection.style = '';
-          committeeSection.removeEventListener('click', handler);
-        }
-      });
-    });
-}
-
-// === ΝΕΟ: Κουμπί και modal για πρόσκληση στην τριμελή ===
-const inviteCommitteeMainBtn = document.getElementById('inviteCommitteeMainBtn');
-const mainCommitteeModal = document.getElementById('mainCommitteeModal');
-const closeMainCommitteeModalBtn = document.getElementById('closeMainCommitteeModalBtn');
-const mainInviteCommitteeForm = document.getElementById('mainInviteCommitteeForm');
-const thesisSelect = document.getElementById('thesisSelect');
-const mainProfessorSelect1 = document.getElementById('mainProfessorSelect1');
-const mainProfessorSelect2 = document.getElementById('mainProfessorSelect2');
-const mainInviteCommitteeMsg = document.getElementById('mainInviteCommitteeMsg');
-
-let mainAvailableTheses = [];
-let mainAvailableProfessors = [];
-
-if (inviteCommitteeMainBtn) {
-  inviteCommitteeMainBtn.addEventListener('click', async () => {
-    // Φέρε τις διπλωματικές που έχει αναθέσει ο καθηγητής (ή όλες αν δεν υπάρχει φίλτρο)
-    // Εδώ υποθέτουμε ότι ο logged in user είναι καθηγητής και υπάρχει στο localStorage
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (!user || user.Role !== 'PROFESSOR') {
-      alert('Δεν έχετε δικαίωμα πρόσβασης.');
-      return;
-    }
-    // Φέρε όλα τα θέματα που είναι επιβλέπων ο καθηγητής
-    const res = await fetch(`http://localhost:3000/thesis`);
-    const allTheses = await res.json();
-    mainAvailableTheses = allTheses.filter(t => t.ProfessorID === user.UserID);
-    thesisSelect.innerHTML = '<option value="">--Επιλογή--</option>';
-    mainAvailableTheses.forEach(t => {
-      thesisSelect.innerHTML += `<option value="${t.ThesisID}">${t.Title} (${t.StudentID ? 'ΑΜ: '+t.StudentID : 'Χωρίς φοιτητή'})</option>`;
-    });
-    // Φέρε όλους τους καθηγητές
-    const profRes = await fetch('http://localhost:3000/professors');
-    const profs = await profRes.json();
-    mainAvailableProfessors = profs.filter(p => p.UserID !== user.UserID);
-    mainProfessorSelect1.innerHTML = '<option value="">--Επιλογή--</option>';
-    mainProfessorSelect2.innerHTML = '<option value="">--Επιλογή--</option>';
-    mainAvailableProfessors.forEach(p => {
-      mainProfessorSelect1.innerHTML += `<option value="${p.UserID}">${p.UserName} (${p.Email})</option>`;
-      mainProfessorSelect2.innerHTML += `<option value="${p.UserID}">${p.UserName} (${p.Email})</option>`;
-    });
-    mainProfessorSelect1.selectedIndex = 0;
-    mainProfessorSelect2.selectedIndex = 0;
-    mainInviteCommitteeMsg.textContent = '';
-    mainCommitteeModal.style.display = 'flex';
-  });
-}
-if (closeMainCommitteeModalBtn) {
-  closeMainCommitteeModalBtn.addEventListener('click', () => {
-    mainCommitteeModal.style.display = 'none';
-  });
-}
-if (mainInviteCommitteeForm) {
-  mainInviteCommitteeForm.addEventListener('submit', async e => {
-    e.preventDefault();
-    const thesisId = thesisSelect.value;
-    const prof1 = mainProfessorSelect1.value;
-    const prof2 = mainProfessorSelect2.value;
-    if (!thesisId || !prof1 || !prof2 || prof1 === prof2) {
-      mainInviteCommitteeMsg.textContent = 'Επιλέξτε διπλωματική και δύο διαφορετικούς καθηγητές.';
-      mainInviteCommitteeMsg.style.color = '#ff4444';
-      return;
-    }
-    try {
-      const res1 = await fetch('http://localhost:3000/requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ThesisID: thesisId, ProfessorID: prof1 })
-      });
-      const res2 = await fetch('http://localhost:3000/requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ThesisID: thesisId, ProfessorID: prof2 })
-      });
-      if (res1.status === 201 && res2.status === 201) {
-        mainInviteCommitteeMsg.textContent = 'Οι προσκλήσεις στάλθηκαν επιτυχώς!';
-        mainInviteCommitteeMsg.style.color = 'green';
-        setTimeout(() => { mainCommitteeModal.style.display = 'none'; }, 1200);
-      } else {
-        const err1 = await res1.json();
-        const err2 = await res2.json();
-        mainInviteCommitteeMsg.textContent = (err1.message || '') + ' ' + (err2.message || '');
-        mainInviteCommitteeMsg.style.color = '#ff4444';
-      }
-    } catch (err) {
-      mainInviteCommitteeMsg.textContent = 'Σφάλμα αποστολής προσκλήσεων.';
-      mainInviteCommitteeMsg.style.color = '#ff4444';
-    }
-  });
-}
-
-if (mainProfessorSelect1 && mainProfessorSelect2) {
-  mainProfessorSelect1.addEventListener('change', () => {
-    const selected1 = mainProfessorSelect1.value;
-    Array.from(mainProfessorSelect2.options).forEach(opt => {
-      opt.disabled = (opt.value && opt.value === selected1);
-    });
-  });
-  mainProfessorSelect2.addEventListener('change', () => {
-    const selected2 = mainProfessorSelect2.value;
-    Array.from(mainProfessorSelect1.options).forEach(opt => {
-      opt.disabled = (opt.value && opt.value === selected2);
-    });
   });
 }

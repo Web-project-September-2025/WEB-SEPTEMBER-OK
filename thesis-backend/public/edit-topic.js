@@ -1,75 +1,57 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('editTopicForm');
-    const titleInput = document.getElementById('title');
-    const summaryInput = document.getElementById('summary');
-    const pdfInput = document.getElementById('pdfFile');
-    const currentPdf = document.getElementById('currentPdf');
-    const deleteBtn = document.getElementById('deleteBtn');
+const API_BASE = 'http://localhost:3000';
 
-    // Φόρτωση δεδομένων θέματος από localStorage
-    const topics = JSON.parse(localStorage.getItem('topics') || '[]');
-    const idx = localStorage.getItem('editTopicIndex');
-    if(idx === null || idx >= topics.length) {
-        alert('Μη έγκυρο θέμα για επεξεργασία.');
-        window.location.href = 'professor-dashboard.html';
-        return;
+function authHeader() {
+  const token = localStorage.getItem('authToken');
+  return token ? { 'Authorization': 'Bearer ' + token } : {};
+}
+
+const editForm = document.getElementById('editForm');
+const thesisId = localStorage.getItem('editTopicId');
+
+// 1) Έλεγχος ότι υπάρχει ID
+if (!thesisId) {
+  alert('Μη έγκυρο θέμα για επεξεργασία.');
+  window.location.href = 'topics-management.html';
+}
+
+// 2) Φόρτωση στοιχείων θέματος από το API
+fetch(`${API_BASE}/thesis/${thesisId}`)
+  .then(res => {
+    if (!res.ok) throw new Error('Σφάλμα φόρτωσης δεδομένων');
+    return res.json();
+  })
+  .then(thesis => {
+    if (!thesis || !thesis.ThesisID) {
+      throw new Error('Το θέμα δεν βρέθηκε στη βάση.');
     }
+    document.getElementById('title').value = thesis.Title || '';
+    document.getElementById('summary').value = thesis.Description || '';
+    document.getElementById('status').value = thesis.Status || 'UNDER-ASSIGNMENT';
+  })
+  .catch(err => {
+    alert('⛔ ' + err.message);
+    window.location.href = 'topics-management.html';
+  });
 
-    let currentTopic = topics[idx];
-    titleInput.value = currentTopic.title;
-    summaryInput.value = currentTopic.summary;
+// 3) Υποβολή αλλαγών (με προαιρετικό PDF)
+editForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const formData = new FormData(editForm); // περιέχει title, summary, status, pdfFile
 
-    if(currentTopic.pdfName) {
-        currentPdf.innerHTML = `Τρέχον αρχείο PDF: <a href="${currentTopic.pdfData}" target="_blank">${currentTopic.pdfName}</a>`;
-    } else {
-        currentPdf.textContent = 'Δεν υπάρχει επισυναπτόμενο αρχείο PDF.';
-    }
-
-    form.addEventListener('submit', e => {
-        e.preventDefault();
-        const newTitle = titleInput.value.trim();
-        const newSummary = summaryInput.value.trim();
-
-        if(!newTitle || !newSummary) {
-            alert('Παρακαλώ συμπληρώστε τίτλο και σύνοψη.');
-            return;
-        }
-
-        // Αν έχει επιλεγεί νέο pdf
-        if(pdfInput.files.length > 0) {
-            const file = pdfInput.files[0];
-            if(file.type !== 'application/pdf') {
-                alert('Παρακαλώ επιλέξτε αρχείο PDF.');
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                currentTopic.title = newTitle;
-                currentTopic.summary = newSummary;
-                currentTopic.pdfName = file.name;
-                currentTopic.pdfData = event.target.result;
-                topics[idx] = currentTopic;
-                localStorage.setItem('topics', JSON.stringify(topics));
-                alert('Οι αλλαγές αποθηκεύτηκαν!');
-                window.location.href = 'professor-dashboard.html';
-            };
-            reader.readAsDataURL(file);
-        } else {
-            currentTopic.title = newTitle;
-            currentTopic.summary = newSummary;
-            topics[idx] = currentTopic;
-            localStorage.setItem('topics', JSON.stringify(topics));
-            alert('Οι αλλαγές αποθηκεύτηκαν!');
-            window.location.href = 'professor-dashboard.html';
-        }
-    });
-
-    deleteBtn.addEventListener('click', () => {
-        if(confirm('Είστε σίγουροι ότι θέλετε να διαγράψετε το θέμα;')) {
-            topics.splice(idx, 1);
-            localStorage.setItem('topics', JSON.stringify(topics));
-            alert('Το θέμα διαγράφηκε.');
-            window.location.href = 'professor-dashboard.html';
-        }
-    });
+  fetch(`${API_BASE}/professor/topics/${thesisId}`, {
+    method: 'PUT',
+    headers: { ...authHeader() }, // ΜΗΝ βάλεις Content-Type για multipart
+    body: formData
+  })
+  .then(res => {
+    if (!res.ok) return res.json().then(j => { throw new Error(j.message || 'Αποτυχία αποθήκευσης'); });
+    return res.json();
+  })
+  .then(() => {
+    alert('✅ Αποθηκεύτηκε!');
+    // καθάρισε το κλειδί για να μην μείνει stale
+    localStorage.removeItem('editTopicId');
+    window.location.href = 'topics-management.html';
+  })
+  .catch(err => alert('⛔ ' + err.message));
 });

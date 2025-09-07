@@ -3,51 +3,71 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Υποβολή Νέας Διπλωματικής</title>
+  <title>Προσθήκη Θέματος</title>
   <link rel="stylesheet" href="styles/main.css" />
 </head>
-<body>
-  <header>
-    <h1>Αίτηση Νέας Διπλωματικής</h1>
-    <button onclick="logout()">Αποσύνδεση</button>
-  </header>
+<body class="topics-management">
 
-  <main class="form-container">
-    <form id="thesisForm">
-      <label for="title">Τίτλος:</label>
-      <input type="text" id="title" name="title" required />
+  <div class="overlay-logo">
+    <img src="images/logo.png" alt="logo" class="logo" />
+    <div class="top-line"></div>
+  </div>
 
-      <label for="description">Περιγραφή:</label>
-      <textarea id="description" name="description" rows="5" required></textarea>
+  <div class="top-right-title">
+    <h2>Προσθήκη Νέου Θέματος</h2>
+  </div>
 
-      <label for="professor">Επιβλέπων Καθηγητής:</label>
-      <select id="professor" name="professor" required>
-        <option value="">--Επιλέξτε--</option>
-        <option value="Papadopoulos">Δρ. Παπαδόπουλος</option>
-        <option value="Nikolaou">Δρ. Νικολάου</option>
-        <option value="Georgiou">Δρ. Γεωργίου</option>
-      </select>
+  <section class="form-section">
+    <form id="addTopicForm">
+      <div class="row">
+        <label for="title">Τίτλος Θέματος:</label>
+        <input type="text" id="title" name="title" required />
+      </div>
 
-      <label for="start">Ημερομηνία Έναρξης:</label>
-      <input type="date" id="start" name="start" />
+      <div class="row">
+        <label for="summary">Σύνοψη:</label>
+        <textarea id="summary" name="summary" rows="5" required></textarea>
+      </div>
 
-      <label for="end">Ημερομηνία Λήξης:</label>
-      <input type="date" id="end" name="end" />
+      <div class="row">
+        <label for="pdfFile">Επισύναψη PDF (προαιρετικό):</label>
+        <input type="file" id="pdfFile" name="pdfFile" accept="application/pdf" />
+      </div>
 
-      <button type="submit" class="btn">Υποβολή</button>
+      <div class="row">
+        <button type="submit" class="btn-small">Προσθήκη</button>
+        <button type="button" class="btn-small" onclick="window.history.back()">Πίσω</button>
+      </div>
     </form>
-  </main>
+  </section>
 
   <script>
-    function logout() {
-      window.location.href = "index.html";
+    const API_BASE = 'http://localhost:3000';
+    function authHeader() {
+      const token = localStorage.getItem('authToken');
+      return token ? { 'Authorization': 'Bearer ' + token } : {};
     }
 
-    document.getElementById("thesisForm").addEventListener("submit", function (e) {
+    document.getElementById('addTopicForm').addEventListener('submit', (e) => {
       e.preventDefault();
-      alert("Η αίτησή σας καταχωρήθηκε!");
-      window.location.href = "student-dashboard.html";
+      const formData = new FormData(e.target);
+
+      fetch(`${API_BASE}/professor/topics`, {
+        method: 'POST',
+        headers: { ...authHeader() },
+        body: formData
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Αποτυχία δημιουργίας');
+        return res.json();
+      })
+      .then(() => {
+        alert('Το θέμα προστέθηκε!');
+        window.location.href = 'topics-management.html';
+      })
+      .catch(err => alert('Σφάλμα: ' + err.message));
     });
   </script>
+
 </body>
 </html>
