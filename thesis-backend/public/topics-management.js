@@ -19,19 +19,24 @@ function renderTopics() {
         return;
     }
 
-    topics.forEach((topic, index) => {
-        const topicRow = document.createElement('div');
-topicRow.classList.add('thesis-row'); // Θα το στυλάρουμε με CSS
-
-topicRow.innerHTML = `
-  <div class="thesis-title">${topic.title}</div>
-  <div class="thesis-actions">
-    <button data-index="${index}" class="editBtn">Επεξεργασία</button>
-  </div>
-`;
-
 topicsList.appendChild(topicRow);
-    });
+        topics.forEach((topic, index) => {
+                const topicRow = document.createElement('div');
+                topicRow.classList.add('thesis-row'); // Θα το στυλάρουμε με CSS
+
+                // Αν το θέμα έχει πεδία από backend, χρησιμοποίησε Title/Description
+                const title = topic.Title || topic.title || 'Χωρίς τίτλο';
+                const summary = topic.Description || topic.summary || '';
+
+                topicRow.innerHTML = `
+                    <div class="thesis-title">${title}</div>
+                    <div class="thesis-actions">
+                        <button data-index="${index}" class="editBtn">Επεξεργασία</button>
+                    </div>
+                `;
+
+                topicsList.appendChild(topicRow);
+        });
 
     // Προσθήκη event listeners στα κουμπιά επεξεργασίας
     document.querySelectorAll('.editBtn').forEach(button => {
@@ -76,33 +81,33 @@ addTopicForm.addEventListener('submit', event => {
 });
 
 function addNewTopic(title, summary, pdfName, pdfData) {
-  const user = JSON.parse(localStorage.getItem('user')); // Πάρε τα στοιχεία του καθηγητή
+    const user = JSON.parse(localStorage.getItem('user')); // Πάρε τα στοιχεία του καθηγητή
 
-  function generateUniqueId() {
-  return Date.now() + Math.floor(Math.random() * 1000); // απλό μοναδικό id με timestamp + τυχαίο αριθμό
-}
+    function generateUniqueId() {
+        return Date.now() + Math.floor(Math.random() * 1000); // απλό μοναδικό id με timestamp + τυχαίο αριθμό
+    }
 
-  const newTopic = {
-    title,
-    summary,
-    pdfName,
-    pdfData,
-    Status: 'UNDER-ASSIGNMENT',
-    ProfessorID: user?.UserID || null,
-    ProfessorName: user?.Name || 'Άγνωστος',
-    StartDate: new Date().toISOString(),
-    EndDate: null,
-    StudentID: null,
-    Progress: 0,
-    RepositoryLink: '',
-    ThesisID: generateUniqueId(), // Προαιρετικά αν θες id
-    assignedTo: null,
-    confirmed: false
-  };
+    const newTopic = {
+        title,
+        summary,
+        pdfName,
+        pdfData,
+        Status: 'UNDER-ASSIGNMENT',
+        ProfessorID: user?.UserID || null,
+        ProfessorName: user?.Name || 'Άγνωστος',
+        StartDate: new Date().toISOString(),
+        EndDate: null,
+        StudentID: null,
+        Progress: 0,
+        RepositoryLink: '',
+        ThesisID: generateUniqueId(), // Προαιρετικά αν θες id
+        assignedTo: null,
+        confirmed: false
+    };
 
-  topics.push(newTopic);
-  localStorage.setItem('topics', JSON.stringify(topics));
-  renderTopics();
-  addTopicForm.reset();
-  alert('Το θέμα προστέθηκε!');
+            topics.push(newTopic);
+            localStorage.setItem('topics', JSON.stringify(topics));
+            renderTopics();
+            addTopicForm.reset();
+            alert('Το θέμα προστέθηκε!');
 }

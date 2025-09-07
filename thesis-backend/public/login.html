@@ -18,11 +18,12 @@
   <div class="login-box">
     <h2>Είσοδος στην Πλατφόρμα</h2>
     <form id="login-form">
-      <label for="email">Email:</label>
-      <input type="text" id="email" name="email" required />
 
-      <label for="password">Κωδικός πρόσβασης:</label>
-      <input type="password" id="password" name="password" required />
+  <label for="email">Όνομα:</label>
+  <input type="text" id="email" name="email" required placeholder="Όνομα" />
+
+  <label for="password">Κωδικός:</label>
+  <input type="password" id="password" name="password" required placeholder="Κωδικός" />
 
       <label for="role">Επιλογή ρόλου:</label>
       <select id="role" name="role" required>
@@ -62,6 +63,11 @@
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
     const role = document.getElementById("role").value;
+
+    if (!role) {
+      alert("Παρακαλώ επιλέξτε ρόλο για να συνεχίσετε.");
+      return;
+    }
 
     fetch("http://localhost:3000/login", {
       method: "POST",
