@@ -734,3 +734,525 @@ body.assign-topic {
   min-height: 1.2em;
   text-align: center;
 }
+
+/* ============== Theme tokens ============== */
+:root{
+  --bg: #0d0f14;
+  --primary: #0ea5e9;        /* μπλε κουμπιών */
+  --primary-hover: #0284c7;
+  --text: #e5eef7;
+  --muted: #9fb3c8;
+  --glass-bg: rgba(255,255,255,0.08);
+  --glass-brd: rgba(255,255,255,0.15);
+  --shadow: 0 10px 30px rgba(0,0,0,0.35);
+  --radius: 14px;
+}
+
+/* ============== Background ============== */
+html, body{
+  height:100%;
+}
+body{
+  margin:0;
+  color:var(--text);
+  background: var(--bg) url("images/landing-background.jpg") center/cover no-repeat fixed;
+}
+
+/* σκουρόχρωμο overlay για καλύτερη αντίθεση */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.65));
+  pointer-events:none;
+}
+
+/* ============== Header ============== */
+header{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  padding:28px 46px 18px;
+  margin:18px 18px 0;
+  border-radius: var(--radius);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-brd);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+}
+
+/* λεπτή “λευκή” γραμμή κάτω από το header (όπως στο screenshot) */
+header::after{
+  content:"";
+  position:absolute;
+  left:24px;
+  right:24px;
+  bottom:-1px;
+  height:1px;
+  background: rgba(255,255,255,0.35);
+}
+
+header h1{
+  margin:0;
+  font-weight:800;
+  font-size: clamp(1.4rem, 2.2vw, 2.4rem);
+  letter-spacing: .5px;
+}
+
+/* ============== Button styles ============== */
+button, .btn, a.btn{
+  -webkit-tap-highlight-color:transparent;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:.5rem;
+  padding:14px 22px;
+  background: var(--primary);
+  color:white;
+  border:none;
+  border-radius: 12px;
+  font-size: clamp(.95rem, 1.2vw, 1.05rem);
+  font-weight:700;
+  text-decoration:none;
+  cursor:pointer;
+  transition: transform .06s ease, background .15s ease, box-shadow .15s ease;
+  box-shadow: 0 6px 18px rgba(14,165,233,.25);
+}
+button:hover, .btn:hover, a.btn:hover{
+  background: var(--primary-hover);
+}
+button:active, .btn:active, a.btn:active{
+  transform: translateY(1px);
+}
+
+/* “Αποσύνδεση” κάτω-αριστερά όπως στην εικόνα */
+header + .logout-fixed{
+  position:fixed;
+  left:36px;
+  bottom:36px;
+}
+
+/* ============== Main / Table card ============== */
+main.dashboard{
+  max-width: 1200px;
+  margin: 28px auto 120px;
+  padding: 0 24px;
+}
+
+main.dashboard h2{
+  font-size: clamp(1.2rem, 1.8vw, 1.6rem);
+  font-weight:700;
+  margin: 0 0 16px;
+  color: var(--muted);
+}
+
+/* glass card για τον πίνακα */
+main.dashboard > table{
+  width:100%;
+  border-collapse: collapse;
+  background: var(--glass-bg);
+  border:1px solid var(--glass-brd);
+  border-radius: var(--radius);
+  overflow:hidden;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+}
+
+/* head */
+main.dashboard thead th{
+  text-align:left;
+  padding:18px 20px;
+  font-size:.95rem;
+  color:#d9e7f5;
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+  border-bottom:1px solid var(--glass-brd);
+}
+
+/* rows */
+main.dashboard tbody td{
+  padding:16px 20px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  color: var(--text);
+  font-size: .98rem;
+}
+
+main.dashboard tbody tr:hover{
+  background: rgba(255,255,255,0.06);
+}
+
+/* το κελί “Ενέργειες” να φαίνεται σαν panel */
+main.dashboard tbody td:last-child{
+  text-align:right;
+  white-space:nowrap;
+}
+
+/* ============== Responsive table (mobile) ============== */
+@media (max-width: 800px){
+  main.dashboard > table,
+  main.dashboard thead,
+  main.dashboard tbody,
+  main.dashboard th,
+  main.dashboard td,
+  main.dashboard tr{
+    display:block;
+    width:100%;
+  }
+
+  main.dashboard thead{
+    display:none;
+  }
+
+  main.dashboard tbody tr{
+    margin:14px 0;
+    border:1px solid var(--glass-brd);
+    border-radius:12px;
+    overflow:hidden;
+  }
+
+  main.dashboard tbody td{
+    border:none;
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+  }
+
+  main.dashboard tbody td::before{
+    content: attr(data-label);
+    color: var(--muted);
+    font-weight:600;
+  }
+
+  main.dashboard tbody td:last-child{
+    justify-content:flex-end;
+  }
+}
+
+/* ---------- table badge for status (προαιρετικό χρωματάκι) ---------- */
+td[data-label="Κατάσταση"], td:nth-child(4){
+  font-weight:700;
+}
+td[data-label="Κατάσταση"]::after, td:nth-child(4)::after{
+  /* μικρό οπτικό διαχωριστικό – προαιρετικό */
+}
+
+/* ---------- modal (details) ---------- */
+.modal.hidden{ display:none; }
+.modal{
+  position:fixed; inset:0; z-index:50;
+}
+.modal__backdrop{
+  position:absolute; inset:0;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(2px);
+}
+.modal__panel{
+  position:absolute;
+  right: max(16px, 6vw);
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(560px, 92vw);
+  max-height: 86vh;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-brd);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  display:flex; flex-direction: column;
+}
+.modal__header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--glass-brd);
+}
+.modal__header h3{ margin:0; font-size:1.1rem; }
+.modal__close{
+  background: transparent;
+  border: 1px solid var(--glass-brd);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.modal__body{
+  padding: 16px 18px;
+  overflow:auto;
+}
+.modal__footer{
+  padding: 12px 18px;
+  border-top: 1px solid var(--glass-brd);
+  display:flex; justify-content:flex-end; gap:10px;
+}
+
+.kv{ margin: 8px 0; }
+.kv > span{
+  color: var(--muted); display:inline-block; min-width: 120px;
+}
+.kv > p{ margin:.2rem 0 0; color: var(--text); }
+.grid2{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 720px){
+  .grid2{ grid-template-columns: 1fr; }
+}
+
+/* ===============================
+   THEME TOKENS (ασφαλές αν υπάρχουν ήδη)
+================================= */
+:root{
+  --bg: #0d0f14;
+  --primary: #0ea5e9;
+  --primary-hover: #0284c7;
+  --text: #e5eef7;
+  --muted: #9fb3c8;
+  --glass-bg: rgba(255,255,255,0.08);
+  --glass-brd: rgba(255,255,255,0.16);
+  --shadow: 0 10px 30px rgba(0,0,0,0.35);
+  --radius: 14px;
+
+  /* badges */
+  --ok: #22c55e;
+  --ok-ink: #04250f;
+  --info: #60a5fa;
+  --info-ink: #081a33;
+}
+
+/* ===============================
+   BASE / BACKDROP
+================================= */
+html, body { height: 100%; }
+
+body.secretary-dashboard{
+  margin:0;
+  color:var(--text);
+  background: var(--bg) url("../images/secretary.webp") center/cover no-repeat fixed;
+}
+
+/* Αν θες λιγότερο σκοτείνιασμα, ελάφρυνε ή αφαίρεσε το overlay: */
+body.secretary-dashboard::before{
+  content:"";
+  position:fixed; inset:0;
+  /* πιο ελαφρύ overlay */
+  background:linear-gradient(180deg, rgba(0,0,0,.15), rgba(0,0,0,.25));
+  pointer-events:none;
+}
+
+/* ===============================
+   HEADER
+================================= */
+.sd-header{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  padding:24px 32px;
+  margin:22px 22px 0;
+  border-radius: var(--radius);
+  background: var(--glass-bg);
+  border:1px solid var(--glass-brd);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+}
+.sd-header h1{
+  margin:0;
+  font-weight:800;
+  font-size: clamp(1.3rem, 2.2vw, 2.2rem);
+  letter-spacing:.3px;
+}
+.sd-logout{
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:12px 18px;
+  background: var(--primary);
+  color:white; border:none; border-radius:12px;
+  font-weight:700; cursor:pointer;
+  box-shadow: 0 6px 18px rgba(14,165,233,.25);
+  transition: background .15s, transform .06s;
+}
+.sd-logout:hover{ background: var(--primary-hover); }
+.sd-logout:active{ transform: translateY(1px); }
+
+/* ===============================
+   MAIN / CARD
+================================= */
+.sd-main{
+  max-width:1200px;
+  margin: 26px auto 120px;
+  padding: 0 22px;
+}
+.sd-main h2{
+  margin: 0 0 14px;
+  font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+  color: var(--muted);
+  font-weight:700;
+}
+.sd-card{
+  background: var(--glass-bg);
+  border:1px solid var(--glass-brd);
+  border-radius: var(--radius);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+  overflow:hidden;
+}
+
+/* ===============================
+   TABLE
+================================= */
+.sd-table{
+  width:100%;
+  border-collapse: separate;
+  border-spacing:0;
+}
+.sd-table thead th{
+  text-align:left;
+  padding:16px 18px;
+  border-bottom:1px solid var(--glass-brd);
+  color:#d9e7f5;
+  font-size:.95rem;
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+}
+.sd-table tbody td{
+  padding:14px 18px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  font-size:.98rem;
+  color:var(--text);
+  vertical-align: top;
+}
+.sd-table tbody tr:hover{
+  background: rgba(255,255,255,0.06);
+}
+
+/* μικρές περιγραφές σε γραμμή */
+.sd-desc{
+  max-width: 520px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* action button (Προβολή) */
+.sd-btn, .sd-btn-small, a.sd-btn, a.sd-btn-small{
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:8px 12px;
+  background: var(--primary);
+  color:#fff; text-decoration:none;
+  border-radius:10px; font-weight:700;
+  transition: background .15s, transform .06s;
+  box-shadow: 0 6px 14px rgba(14,165,233,.22);
+}
+.sd-btn-small{ font-size:.85rem; }
+.sd-btn:hover, .sd-btn-small:hover{ background: var(--primary-hover); }
+.sd-btn:active, .sd-btn-small:active{ transform: translateY(1px); }
+
+/* ===============================
+   STATUS BADGES
+================================= */
+.sd-badge{
+  display:inline-flex; align-items:center; gap:.4rem;
+  padding:6px 10px;
+  border-radius:999px;
+  font-weight:800; letter-spacing:.2px;
+  font-size:.78rem;
+  border:1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.08);
+}
+.sd-badge::before{
+  content:"";
+  width:8px; height:8px; border-radius:50%;
+  opacity:.95;
+}
+/* ACTIVE → πράσινο */
+.sd-active{
+  background: color-mix(in oklab, var(--ok) 16%, transparent);
+  color: var(--text);
+  border-color: color-mix(in oklab, var(--ok) 28%, transparent);
+}
+.sd-active::before{ background: var(--ok); }
+/* UNDER-EXAMINATION → μπλε */
+.sd-under-examination{
+  background: color-mix(in oklab, var(--info) 18%, transparent);
+  color: var(--text);
+  border-color: color-mix(in oklab, var(--info) 30%, transparent);
+}
+.sd-under-examination::before{ background: var(--info); }
+
+/* ===============================
+   DETAILS PANEL (κάτω από τον πίνακα)
+================================= */
+.details-box{
+  margin-top: 22px;
+  padding: 20px;
+  border-radius: 12px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-brd);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow);
+}
+.details-box h3{
+  margin:0 0 10px;
+  font-size: clamp(1rem, 1.6vw, 1.2rem);
+}
+.details-box p{ margin:.4rem 0; }
+.committee-list{
+  margin: 6px 0 0; padding-left: 18px;
+}
+.committee-list li{ margin: 2px 0; color: var(--text); }
+
+/* ===============================
+   RESPONSIVE
+================================= */
+@media (max-width: 900px){
+  .sd-desc{ max-width: 300px; }
+}
+@media (max-width: 760px){
+  .sd-header{ padding:18px; margin:16px 16px 0; }
+  .sd-main{ padding: 0 16px; }
+  .sd-desc{ max-width: 200px; }
+  .sd-table thead{ display:none; }
+  .sd-table, .sd-table tbody, .sd-table tr, .sd-table td{ display:block; width:100%; }
+  .sd-table tbody tr{ border-bottom:1px solid rgba(255,255,255,0.12); }
+  .sd-table tbody td{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    gap:10px; border:none;
+  }
+  .sd-table tbody td::before{
+    content: attr(data-label);
+    color: var(--muted);
+    font-weight:600;
+  }
+}
+
+.box-row{
+  margin-top: 15px; padding: 12px; border-radius: 8px;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.30);
+}
+.box-row input,
+.box-row textarea{
+  width: 100%; max-width: 460px;
+  padding: 8px 10px; border-radius: 8px; border: 1px solid #cfd6de;
+  background: rgba(0,0,0,0.25); color: #fff;
+}
+.box-row textarea{ min-height: 90px; resize: vertical; }
+.row-actions{ margin-top: 10px; }
+
+/* κόκκινο κουμπί για ακύρωση */
+.sd-danger{
+  background:#c34949;
+  box-shadow: 0 6px 14px rgba(195, 73, 73, .25);
+}
+.sd-danger:hover{ background:#a83a3a; }
+
+/* εισαγωγή χρηστών – ήπιο card */
+.import-box{
+  margin-top: 28px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-brd);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+}
+.import-box h2{ margin: 0 0 10px; font-size: 1.05rem; color: var(--muted); }
+

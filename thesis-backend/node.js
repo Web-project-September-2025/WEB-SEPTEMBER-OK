@@ -14,95 +14,76 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const upload = multer({ dest: "uploads/" });
 
-// Σύνδεση με τη βάση
+// ---- DB
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
-  password: "2004",
-  database: "thesisDetails",
+  password: "Bingalo123!",
+  database: "thesisdetails",
 });
 
 db.connect((err) => {
   if (err) throw err;
-  console.log("Συνδέθηκε με τη βάση!");
+  console.log("✅ Συνδέθηκε με τη βάση!");
 });
 
-// Login
+// ---- AUTH
 app.post("/login", (req, res) => {
-  const { email, password, role } = req.body;
-  const sql = "SELECT * FROM users WHERE Email = ? AND Password = ? AND Role = ?";
-  db.query(sql, [email, password, role], (err, results) => {
+  let { email = "", password = "", role = "" } = req.body;
+  email = email.trim();
+  password = password.trim();
+  const wantedRole = (role || "").toString().trim().toUpperCase();
+
+  const sql = "SELECT * FROM users WHERE Email = ? AND Password = ? LIMIT 1";
+  db.query(sql, [email, password], (err, rows) => {
     if (err) return res.status(500).send(err);
-    if (results.length === 0) return res.status(401).json({ message: "Λάθος στοιχεία" });
-    res.json(results[0]);
+    if (!rows.length) return res.status(401).json({ message: "Λάθος στοιχεία" });
+
+    const user = rows[0];
+    if (wantedRole && user.Role !== wantedRole) {
+      return res.status(403).json({ message: "Λανθασμένος ρόλος για αυτόν τον χρήστη" });
+    }
+    res.json(user);
   });
 });
 
-// Προφίλ χρήστη
-app.get("/user/:id", (req, res) => {
-  const userId = req.params.id;
-  const sql = "SELECT * FROM users WHERE UserID = ?";
-  db.query(sql, [userId], (err, results) => {
-    if (err) return res.status(500).send(err);
-    res.json(results[0]);
-  });
-});
+// ---- APIs
 
-// Ενημέρωση στοιχείων χρήστη
-app.put("/user/:id", (req, res) => {
-  const userId = req.params.id;
-  const { Adress, Email, Phone } = req.body;
-  const sql = `
-    UPDATE users
-    SET Adress = ?, Email = ?, Phone = ?
-    WHERE UserID = ?
-  `;
-  db.query(sql, [Adress, Email, Phone, userId], (err) => {
-    if (err) return res.status(500).send(err);
-    res.json({ message: "Τα στοιχεία ενημερώθηκαν επιτυχώς." });
-  });
-});
+// Όλες/φιλτραρισμένες ΔΕ
+app.get("/theses", (req, res) => {
+  const statuses = (req.query.statuses || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 
-// Λήψη καθηγητών
-app.get("/professors", (req, res) => {
-  const sql = "SELECT UserID, UserName, Email FROM users WHERE Role = 'PROFESSOR'";
-  db.query(sql, (err, results) => {
-    if (err) return res.status(500).send(err);
-    res.json(results);
-  });
-});
+  if (statuses.length === 0) {
+    const sql = `
+      SELECT t.*, u.UserName AS ProfessorName
+      FROM thesis t
+      LEFT JOIN users u ON t.ProfessorID = u.UserID
+      ORDER BY t.ThesisID ASC
+    `;
+    return db.query(sql, (err, rows) => {
+      if (err) return res.status(500).send(err);
+      res.json(rows);
+    });
+  }
 
-// Θέματα φοιτητή
-app.get("/thesis/student/:studentId", (req, res) => {
-  const studentId = req.params.studentId;
+  const placeholders = statuses.map(() => "?").join(",");
   const sql = `
     SELECT t.*, u.UserName AS ProfessorName
     FROM thesis t
     LEFT JOIN users u ON t.ProfessorID = u.UserID
-    WHERE t.StudentID = ?
+    WHERE t.Status IN (${placeholders})
+    ORDER BY t.ThesisID ASC
   `;
-  db.query(sql, [studentId], (err, results) => {
+  db.query(sql, statuses, (err, rows) => {
     if (err) return res.status(500).send(err);
-    res.json(results);
+    res.json(rows);
   });
 });
 
-// Προσωρινές αναθέσεις
-app.get("/assignments/:studentId", (req, res) => {
-  const studentId = req.params.studentId;
-  const sql = `
-    SELECT t.ThesisID, t.Title, u.UserName AS professorName, t.Confirmed, t.Status, t.Progress
-    FROM thesis t
-    LEFT JOIN users u ON t.ProfessorID = u.UserID
-    WHERE t.StudentID = ? AND t.Confirmed = FALSE
-  `;
-  db.query(sql, [studentId], (err, results) => {
-    if (err) return res.status(500).send(err);
-    res.json(results);
-  });
-});
-
-// Λεπτομέρειες θέματος
+// Λεπτομέρειες ΔΕ
 app.get("/thesis/:id", (req, res) => {
   const thesisId = req.params.id;
   const sql = `
@@ -111,186 +92,201 @@ app.get("/thesis/:id", (req, res) => {
     LEFT JOIN users u ON t.ProfessorID = u.UserID
     WHERE t.ThesisID = ?
   `;
-  db.query(sql, [thesisId], (err, results) => {
+  db.query(sql, [thesisId], (err, rows) => {
     if (err) return res.status(500).send(err);
-    if (results.length === 0) return res.status(404).send("Not found");
-    res.json(results[0]);
+    if (!rows.length) return res.status(404).send("Not found");
+    res.json(rows[0]);
   });
 });
 
-// Αιτήσεις για θέμα
-app.get("/requests/:thesisId", (req, res) => {
-  const sql = `
-    SELECT r.ReqID, r.ReqStatus, u.UserName, u.Email
-    FROM requests r
-    JOIN users u ON r.ProfessorID = u.UserID
-    WHERE r.ThesisID = ?
-  `;
-  db.query(sql, [req.params.thesisId], (err, results) => {
-    if (err) return res.status(500).send(err);
-    res.json(results);
-  });
-});
-
-// Δημιουργία αίτησης προς καθηγητή
-app.post("/requests", (req, res) => {
-  const { ThesisID, ProfessorID } = req.body;
-  const checkSql = `SELECT * FROM requests WHERE ThesisID = ? AND ProfessorID = ?`;
-  db.query(checkSql, [ThesisID, ProfessorID], (err, results) => {
-    if (err) return res.status(500).send(err);
-    if (results && results.length > 0) {
-      return res.status(409).json({ message: "Υπάρχει ήδη πρόσκληση για αυτόν τον καθηγητή και θέμα." });
-    }
-    const sql = `INSERT INTO requests (ThesisID, ProfessorID, ReqStatus) VALUES (?, ?, 'QUEUED')`;
-    db.query(sql, [ThesisID, ProfessorID], (err) => {
-      if (err) return res.status(500).send(err);
-      res.status(201).json({ message: "Η αίτηση καταχωρήθηκε." });
-    });
-  });
-});
-
-// Καταχώρηση νέας διπλωματικής
-app.post("/thesis", upload.single("pdf"), (req, res) => {
-  const { title, description, start, end, professorId } = req.body;
-  const pdfPath = req.file ? req.file.path : null;
-  const sql = `
-    INSERT INTO thesis (Title, Description, ProfessorID, Status, StartDate, EndDate, Progress, RepositoryLink, Confirmed)
-    VALUES (?, ?, ?, 'UNDER-ASSIGNMENT', ?, ?, 0, ?, FALSE)
-  `;
-  db.query(sql, [title, description, professorId, start, end, pdfPath], (err) => {
-    if (err) return res.status(500).send(err);
-    res.status(201).json({ message: "Θέμα καταχωρήθηκε" });
-  });
-});
-
-// Αναζήτηση φοιτητών
-app.get("/students", (req, res) => {
-  const query = req.query.q ? req.query.q.trim() : "";
-  if (!query) return res.json([]);
-  const sql = `
-    SELECT u.UserID, u.UserName, u.Email
-    FROM users u
-    WHERE u.Role = 'STUDENT' AND (u.UserID LIKE ? OR u.UserName LIKE ?)
-  `;
-  const likeQuery = `%${query}%`;
-  db.query(sql, [likeQuery, likeQuery], (err, results) => {
-    if (err) return res.status(500).send(err);
-    if (!results || results.length === 0) {
-      return res.status(404).json({ message: "Δεν βρέθηκε φοιτητής με αυτά τα στοιχεία." });
-    }
-    res.json(results);
-  });
-});
-
-// Αποδοχή/Απόρριψη πρόσκλησης
-app.put("/requests/:reqId", (req, res) => {
-  const reqId = req.params.reqId;
-  const { status } = req.body;
-  const sql = "UPDATE requests SET ReqStatus = ? WHERE ReqID = ?";
-  db.query(sql, [status, reqId], (err) => {
-    if (err) return res.status(500).send(err);
-    if (status === "ACCEPTED") {
-      const getThesisSql = "SELECT ThesisID FROM requests WHERE ReqID = ?";
-      db.query(getThesisSql, [reqId], (err, results) => {
-        if (err || results.length === 0) return res.json({ message: "OK" });
-        const thesisId = results[0].ThesisID;
-        const countSql = "SELECT COUNT(*) AS cnt FROM requests WHERE ThesisID = ? AND ReqStatus = 'ACCEPTED'";
-        db.query(countSql, [thesisId], (err, results) => {
-          if (!err && results[0].cnt === 2) {
-            db.query("UPDATE thesis SET Status = 'ACTIVE', Confirmed = TRUE WHERE ThesisID = ?", [thesisId]);
-          }
-          res.json({ message: "OK" });
-        });
-      });
-    } else {
-      res.json({ message: "OK" });
-    }
-  });
-});
-
-// Εκκρεμείς προσκλήσεις καθηγητή
-app.get("/my-requests/:professorId", (req, res) => {
-  const professorId = req.params.professorId;
-  const sql = `
-    SELECT r.*, t.Title, t.StudentID, u.UserName AS StudentName
-    FROM requests r
-    JOIN thesis t ON r.ThesisID = t.ThesisID
-    JOIN users u ON t.StudentID = u.UserID
-    WHERE r.ProfessorID = ? AND r.ReqStatus = 'QUEUED'
-  `;
-  db.query(sql, [professorId], (err, results) => {
-    if (err) return res.status(500).send(err);
-    res.json(results);
-  });
-});
-
-// Οριστική ανάθεση φοιτητή (ACTIVE)
-app.get("/thesis/student/active/:studentId", (req, res) => {
-  const studentId = req.params.studentId;
-  const sql = `
-    SELECT t.*, u.UserName AS ProfessorName
-    FROM thesis t
-    LEFT JOIN users u ON t.ProfessorID = u.UserID
-    WHERE t.StudentID = ? AND t.Status = 'ACTIVE'
-  `;
-  db.query(sql, [studentId], (err, results) => {
-    if (err) return res.status(500).send(err);
-    res.json(results);
-  });
-});
-
-// Προσκλήσεις τριμελούς ανά θέμα
-app.get("/thesis/:thesisId/requests", (req, res) => {
-  const thesisId = req.params.thesisId;
+// Αιτήσεις/μέλη επιτροπής για ΔΕ
+app.get("/thesis/:id/requests", (req, res) => {
+  const thesisId = req.params.id;
   const sql = `
     SELECT r.*, u.UserName AS ProfessorName, u.Email
     FROM requests r
     JOIN users u ON r.ProfessorID = u.UserID
     WHERE r.ThesisID = ?
   `;
-  db.query(sql, [thesisId], (err, results) => {
+  db.query(sql, [thesisId], (err, rows) => {
     if (err) return res.status(500).send(err);
-    res.json(results);
+    res.json(rows);
   });
 });
 
-// 📌 ΔΙΟΡΘΩΜΕΝΟ: Λήψη θεμάτων προς ανάθεση
-app.get("/thesis", (req, res) => {
-  const professorId = req.query.professorId;
-  let sql = `
-    SELECT t.*, u.UserName AS ProfessorName
-    FROM thesis t
-    LEFT JOIN users u ON t.ProfessorID = u.UserID
-    WHERE t.Status = 'UNDER-ASSIGNMENT'
-  `;
-  const params = [];
-  if (professorId) {
-    sql += " AND t.ProfessorID = ?";
-    params.push(professorId);
-  }
-  console.log("[DEBUG] /thesis query:", sql, "params:", params);
-  db.query(sql, params, (err, results) => {
-    if (err) return res.status(500).send(err);
-    console.log("[DEBUG] /thesis results:", results);
-    res.json(results);
-  });
-});
-
-// Προσωρινή ανάθεση φοιτητή
-app.put("/thesis/:id/assign", (req, res) => {
+// Καταχώρηση Πρωτοκόλλου (ACTIVE)
+app.post("/thesis/:id/protocol", (req, res) => {
   const thesisId = req.params.id;
-  const { studentId } = req.body;
-  const sql = `
-    UPDATE thesis
-    SET StudentID = ?, Confirmed = FALSE
-    WHERE ThesisID = ?
-  `;
-  db.query(sql, [studentId, thesisId], (err) => {
+  const { protocol } = req.body;
+  if (!protocol) return res.status(400).json({ message: "Λείπει protocol" });
+  const sql = `UPDATE thesis SET ProtocolNumber = ? WHERE ThesisID = ?`;
+  db.query(sql, [protocol, thesisId], (err) => {
     if (err) return res.status(500).send(err);
-    res.json({ message: "Η προσωρινή ανάθεση έγινε επιτυχώς." });
+    res.json({ message: "OK" });
   });
+});
+
+/**
+ * ❗ Ακύρωση ενεργής ΔΕ από Γραμματεία
+ * Αλλάζει Status σε 'CANCELLED' και αποθηκεύει:
+ *  - CancellationGSNumber (π.χ. ΓΣ-15/2025)
+ *  - CancellationReason   (ελεύθερο κείμενο)
+ *
+ * Προϋποθέσεις στήλες στον πίνακα thesis:
+ *   CancellationGSNumber VARCHAR(50) NULL,
+ *   CancellationReason   TEXT        NULL
+ */
+app.put("/thesis/:id/cancel", (req, res) => {
+  const thesisId = req.params.id;
+  const { gsNumber, reason } = req.body;
+
+  if (!gsNumber || !reason) {
+    return res
+      .status(400)
+      .json({ message: "Απαιτούνται ΑΠ ΓΣ και λόγος ακύρωσης." });
+  }
+
+  // Επιτρέπουμε ακύρωση μόνο από ACTIVE
+  const checkSql = "SELECT Status FROM thesis WHERE ThesisID = ? LIMIT 1";
+  db.query(checkSql, [thesisId], (err, rows) => {
+    if (err) return res.status(500).send(err);
+    if (!rows.length)
+      return res.status(404).json({ message: "Δεν βρέθηκε διπλωματική." });
+
+    if (rows[0].Status !== "ACTIVE") {
+      return res
+        .status(409)
+        .json({ message: "Ακύρωση επιτρέπεται μόνο για ενεργές διπλωματικές." });
+    }
+
+    const sql = `
+      UPDATE thesis
+      SET Status = 'CANCELLED',
+        CancellationGSNumber = ?,
+        CancellationYear = YEAR(CURDATE()),
+        CancellationReason = ?,
+        IsCancelled = 1,
+        EndDate = CURDATE()
+      WHERE ThesisID = ?
+    `;
+
+    db.query(sql, [gsNumber, reason, thesisId], (err2) => {
+      if (err2) return res.status(500).send(err2);
+      res.json({ message: "Η ΔΕ ακυρώθηκε επιτυχώς." });
+    });
+  });
+});
+
+// Έλεγχος αν μια ΔΕ είναι "έτοιμη για περάτωση"
+app.get("/thesis/:id/finishable", (req, res) => {
+  const thesisId = req.params.id;
+
+  const qGrades = `
+    SELECT COUNT(*) AS cnt
+    FROM exam e
+    JOIN grade g ON g.ExamID = e.ExamID
+    WHERE e.ThesisID = ?
+  `;
+  const qRepo = `SELECT RepositoryLink FROM thesis WHERE ThesisID = ? LIMIT 1`;
+
+  db.query(qGrades, [thesisId], (err, rowsG) => {
+    if (err) return res.status(500).send(err);
+    const hasGrades = (rowsG?.[0]?.cnt || 0) > 0;
+
+    db.query(qRepo, [thesisId], (err2, rowsR) => {
+      if (err2) return res.status(500).send(err2);
+      const repo = rowsR?.[0]?.RepositoryLink || "";
+      // Δεχόμαστε repo που δεν είναι κενό ούτε 'unknown'
+      const hasRepositoryLink = !!repo && repo.trim() !== "" && repo.trim().toLowerCase() !== "unknown";
+
+      res.json({ hasGrades, hasRepositoryLink, ok: hasGrades && hasRepositoryLink });
+    });
+  });
+});
+
+// Περάτωση ΔΕ (μόνο από UNDER-EXAMINATION και μόνο αν ok)
+app.post("/thesis/:id/finalize", (req, res) => {
+  const thesisId = req.params.id;
+
+  const qStatus = `SELECT Status FROM thesis WHERE ThesisID = ? LIMIT 1`;
+  db.query(qStatus, [thesisId], (err, rowsS) => {
+    if (err) return res.status(500).send(err);
+    if (!rowsS.length) return res.status(404).json({ message: "Δεν βρέθηκε διπλωματική." });
+    if (rowsS[0].Status !== "UNDER-EXAMINATION") {
+      return res.status(409).json({ message: "Περάτωση επιτρέπεται μόνο για διπλωματικές Υπό Εξέταση." });
+    }
+
+    // Ξανα-ελέγχουμε προϋποθέσεις
+    const qGrades = `
+      SELECT COUNT(*) AS cnt
+      FROM exam e
+      JOIN grade g ON g.ExamID = e.ExamID
+      WHERE e.ThesisID = ?
+    `;
+    const qRepo = `SELECT RepositoryLink FROM thesis WHERE ThesisID = ? LIMIT 1`;
+
+    db.query(qGrades, [thesisId], (errG, rowsG) => {
+      if (errG) return res.status(500).send(errG);
+      const hasGrades = (rowsG?.[0]?.cnt || 0) > 0;
+
+      db.query(qRepo, [thesisId], (errR, rowsR) => {
+        if (errR) return res.status(500).send(errR);
+        const repo = rowsR?.[0]?.RepositoryLink || "";
+        const hasRepositoryLink = !!repo && repo.trim() !== "" && repo.trim().toLowerCase() !== "unknown";
+
+        if (!hasGrades || !hasRepositoryLink) {
+          return res.status(422).json({ message: "Απαιτούνται βαθμοί και σύνδεσμος Νημερτής/αποθετηρίου." });
+        }
+
+        const qUpdate = `
+          UPDATE thesis
+          SET Status = 'FINISHED',
+              EndDate = CURDATE()
+          WHERE ThesisID = ?
+        `;
+        db.query(qUpdate, [thesisId], (errU) => {
+          if (errU) return res.status(500).send(errU);
+          res.json({ message: "✅ Η διπλωματική περατώθηκε." });
+        });
+      });
+    });
+  });
+});
+
+
+// Εισαγωγή χρηστών από JSON
+app.post("/import-users", (req, res) => {
+  const users = req.body;
+  if (!Array.isArray(users)) {
+    return res
+      .status(400)
+      .json({ message: "Το αρχείο δεν περιέχει έγκυρο array JSON." });
+  }
+  const sql = `
+    INSERT INTO users (Password, UserName, Role, Adress, Phone, Email)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+  const tasks = users.map(
+    (u) =>
+      new Promise((resolve, reject) => {
+        db.query(
+          sql,
+          [u.Password, u.UserName, u.Role, u.Adress, u.Phone || null, u.Email],
+          (err) => (err ? reject(err) : resolve())
+        );
+      })
+  );
+  Promise.all(tasks)
+    .then(() => res.json({ message: "✅ Οι χρήστες καταχωρήθηκαν με επιτυχία." }))
+    .catch((err) => {
+      console.error(err);
+      res.status(500).json({ message: "Σφάλμα κατά την εισαγωγή χρηστών." });
+    });
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
+
+
+
