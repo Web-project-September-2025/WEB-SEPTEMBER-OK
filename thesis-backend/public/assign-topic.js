@@ -1,5 +1,4 @@
 // assign-topic.js
-
 const API_BASE = 'http://localhost:3000';
 
 function authHeader() {
@@ -33,7 +32,7 @@ ensureProfessor();
 
 const me = JSON.parse(localStorage.getItem('user') || 'null');
 
-// Φέρνουμε θέματα ΜΟΝΟ UNDER-ASSIGNMENT του καθηγητή
+// ΜΟΝΟ UNDER-ASSIGNMENT χωρίς StudentID
 async function fetchProfessorAssignable() {
   const res = await fetch(`${API_BASE}/professor/topics?onlyAssignable=1`, {
     headers: { ...authHeader() }
@@ -42,7 +41,7 @@ async function fetchProfessorAssignable() {
   return res.json();
 }
 
-// Φέρνουμε ΟΛΑ του καθηγητή (για να φιλτράρουμε τα προσωρινά)
+// Όλα του καθηγητή (για να φιλτράρουμε PROVISIONAL για τον φοιτητή)
 async function fetchAllProfessorTheses() {
   const res = await fetch(`${API_BASE}/professor/topics`, {
     headers: { ...authHeader() }
@@ -109,7 +108,6 @@ searchStudentForm.addEventListener('submit', async (e) => {
       const picked = students.find(x => x.UserID === uid);
       studentInfo.innerHTML = `<strong>Επιλεγμένος φοιτητής:</strong> ${picked.UserName} (${am ? 'AM: '+am : 'ID: '+uid})`;
 
-      // Φόρτωσε panels και εμφάνισέ τα
       await loadPanels();
       showAssignPanels();
     };
@@ -122,11 +120,11 @@ searchStudentForm.addEventListener('submit', async (e) => {
 
 // ---- Panels ----
 async function loadPanels() {
-  // Αριστερά: διαθέσιμα (UNDER-ASSIGNMENT)
+  // Αριστερά: διαθέσιμα (UNDER-ASSIGNMENT χωρίς student)
   topics = await fetchProfessorAssignable();
   renderAvailable();
 
-  // Δεξιά: προσωρινά του συγκεκριμένου φοιτητή
+  // Δεξιά: προσωρινά (PROVISIONAL) του συγκεκριμένου φοιτητή
   const all = await fetchAllProfessorTheses();
   renderProvisional(all);
 }
@@ -142,9 +140,9 @@ function renderAvailable() {
   topics.forEach(t => {
     const div = document.createElement('div');
     div.className = 'topic-item';
+    // ΜΟΝΟ ΤΙΤΛΟΣ (όχι περιγραφή)
     div.innerHTML = `
-      <strong>${t.Title}</strong><br/>
-      <span>${t.Description || ''}</span><br/>
+      <strong>${t.Title}</strong>
       <div class="btn-row">
         <button class="btn-small" data-assign="${t.ThesisID}">Προσωρινή Ανάθεση</button>
       </div>
@@ -183,12 +181,10 @@ function renderAvailable() {
 function renderProvisional(allTheses) {
   provisionalList.innerHTML = '';
 
-  // Φίλτρο: του τρέχοντα καθηγητή + UNDER-ASSIGNMENT + StudentID = selected + προσωρινό
   const provisional = (allTheses || []).filter(t =>
     t.ProfessorID === me.UserID &&
-    t.Status === 'UNDER-ASSIGNMENT' &&
-    t.StudentID === currentStudent.userId &&
-    Number(t.AssignmentConfirmed) === 0
+    t.Status === 'PROVISIONAL' &&
+    t.StudentID === currentStudent.userId
   );
 
   if (provisional.length === 0) {

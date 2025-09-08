@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Πρόσκληση Τριμελούς</title>
+  <link rel="stylesheet" href="styles/main.css" />
+  <style>
+    :root { --below-line-offset: 240px; }
+    body.invite-page {
+      /* background όπως στις άλλες σελίδες */
+      background: url('images/student.png') center/cover fixed no-repeat;
+    }
+    .overlay-logo { position: fixed; top: 10px; left: 40px; z-index: 5; }
+    .overlay-logo .top-line { margin-top: 8px; position: relative; z-index: 1; }
+    .top-right-title { position: fixed; top: 10px; right: 40px; z-index: 5; }
+
+    .page { max-width: 1100px; margin: var(--below-line-offset) auto 40px; padding: 0 16px; position: relative; z-index: 2; }
+    .card { background: rgba(0,0,0,.48); border-radius: 14px; padding: 18px; backdrop-filter: blur(2px); box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+
+    .grid-2 { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; }
+    @media (max-width: 980px){ .grid-2 { grid-template-columns: 1fr; } }
+
+    .list { list-style: none; margin: 0; padding: 0; }
+    .item { padding: 10px 12px; border-radius: 10px; background: rgba(255,255,255,.06); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+    .muted { opacity: .85; font-size: 13px; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:9999px; background:#eee; color:#111; font-size:12px; }
+    .btn-small.danger { background:#a53131; }
+  </style>
+  <script defer src="invite-committee.js"></script>
+
+  <script>
+    function setBelowLineOffset(){
+      const line = document.querySelector('.top-line');
+      if(!line) return;
+      const r = line.getBoundingClientRect();
+      const offset = Math.max(210, Math.round(r.bottom + 30));
+      document.documentElement.style.setProperty('--below-line-offset', offset + 'px');
+    }
+    window.addEventListener('DOMContentLoaded', setBelowLineOffset);
+    window.addEventListener('resize', setBelowLineOffset);
+  </script>
+</head>
+<body class="invite-page">
+  <!-- Logo & γραμμή -->
+  <div class="overlay-logo">
+    <img src="images/logo.png" alt="logo" class="logo" />
+    <div class="top-line"></div>
+  </div>
+  <!-- Τίτλος -->
+  <div class="top-right-title">
+    <h2>Πρόσκληση Τριμελούς</h2>
+  </div>
+
+  <div class="page">
+    <section class="card">
+      <div class="grid-2">
+        <!-- Αριστερά: Επιλογή ΔΕ & Αναζήτηση καθηγητών -->
+        <div>
+          <h3 style="margin-top:0;">Επιλογή Διπλωματικής (PROVISIONAL)</h3>
+          <select id="thesisSelect" style="min-width: 320px;"></select>
+          <div id="thesisInfo" class="muted" style="margin-top:6px;"></div>
+
+          <div style="margin-top:16px;">
+            <label>Αναζήτηση Καθηγητών</label>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input id="qProf" type="text" placeholder="π.χ. Παπαδόπουλος" />
+              <button id="searchBtn" class="btn-small">Αναζήτηση</button>
+            </div>
+            <div id="profResults" style="margin-top:10px;"></div>
+          </div>
+        </div>
+
+        <!-- Δεξιά: Τρέχουσες προσκλήσεις -->
+        <div>
+          <h3 style="margin-top:0;">Προσκλήσεις για τη ΔΕ</h3>
+          <div id="invitesWrap"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

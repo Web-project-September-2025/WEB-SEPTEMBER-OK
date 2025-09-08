@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Οι Διπλωματικές μου</title>
+  <link rel="stylesheet" href="styles/main.css" />
+
+  <style>
+    /* === BACKGROUND ΕΙΚΟΝΑ ΣΕ ΟΛΗ ΤΗ ΣΕΛΙΔΑ === */
+    html, body { height: 100%; }
+    body.prof-theses{
+      background: url('images/student.png') center center / cover no-repeat fixed;
+      /* αν δεν θες parallax, βγάλε το 'fixed' */
+    }
+    /* προαιρετικό σκοτείνιασμα για καλύτερη αναγνωσιμότητα */
+    body.prof-theses::before{
+      content:"";
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 0;
+    }
+
+    /* Δυναμικό κενό κάτω από τη λευκή γραμμή */
+    :root { --below-line-offset: 260px; }
+
+    /* Logo + γραμμή σταθερά ψηλά, πάνω από το περιεχόμενο */
+    .overlay-logo { position: fixed; top: 10px; left: 40px; z-index: 5; }
+    .overlay-logo .top-line { margin-top: 8px; position: relative; z-index: 1; }
+
+    /* Τίτλος επάνω δεξιά */
+    .top-right-title { position: fixed; top: 10px; right: 40px; z-index: 5; }
+
+    /* Το κύριο πλαίσιο κάτω από τη γραμμή, πάνω από το overlay */
+    .prof-theses .page {
+      max-width: 1200px;
+      margin: var(--below-line-offset) auto 40px;
+      padding: 0 16px;
+      position: relative;
+      z-index: 2; /* πάνω από το σκοτείνιασμα */
+    }
+
+    .prof-theses .card {
+      background: rgba(0,0,0,.45);
+      border-radius: 14px;
+      padding: 18px;
+      backdrop-filter: blur(2px);
+      box-shadow: 0 6px 18px rgba(0,0,0,.25);
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 12px;
+      align-items: end;
+    }
+    .muted { opacity: .85; font-size: 13px; }
+
+    .theses-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    .theses-table th, .theses-table td {
+      padding: 10px 8px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .theses-table tr:hover { background: rgba(255,255,255,.04); cursor: pointer; }
+
+    .pill { display:inline-block; padding:2px 8px; border-radius:9999px; background:#eee; color:#111; font-size:12px; }
+
+    .split { display: grid; grid-template-columns: 2fr 1.2fr; gap: 14px; }
+    .detail { margin-top: 16px; }
+    .timeline li { margin: 6px 0; }
+    .actions-row { display:flex; gap:10px; flex-wrap: wrap; margin-top: 8px; }
+  </style>
+
+  <script defer src="professor-theses.js"></script>
+
+  <!-- Υπολογισμός δυναμικού κενού κάτω από τη γραμμή -->
+  <script>
+    function setBelowLineOffset(){
+      const line = document.querySelector('.top-line');
+      if(!line) return;
+      const rect = line.getBoundingClientRect();
+      const offset = Math.max(220, Math.round(rect.bottom + 32));
+      document.documentElement.style.setProperty('--below-line-offset', offset + 'px');
+    }
+    window.addEventListener('DOMContentLoaded', setBelowLineOffset);
+    window.addEventListener('resize', setBelowLineOffset);
+  </script>
+</head>
+
+<body class="prof-theses">
+  <!-- Logo & γραμμή -->
+  <div class="overlay-logo">
+    <img src="images/logo.png" alt="logo" class="logo" />
+    <div class="top-line"></div>
+  </div>
+
+  <!-- Τίτλος πάνω δεξιά -->
+  <div class="top-right-title">
+    <h2>Οι Διπλωματικές μου</h2>
+  </div>
+
+  <div class="page">
+    <section class="card">
+      <div class="filters">
+        <div>
+          <label>Αναζήτηση (Τίτλος / Φοιτητής)</label>
+          <input id="q" type="text" placeholder="π.χ. Machine Learning ή Γεώργιος" />
+        </div>
+
+        <div>
+          <label>Ρόλος</label><br/>
+          <select id="role">
+            <option value="all">Όλες (Επιβλέπων ή Τριμελής)</option>
+            <option value="supervisor">Μόνο Επιβλέπων</option>
+            <option value="committee">Μόνο Τριμελής</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Καταστάσεις</label><br/>
+          <select id="statuses" multiple size="6" style="min-width:220px;">
+            <option value="UNDER-ASSIGNMENT">UNDER-ASSIGNMENT</option>
+            <option value="PROVISIONAL">PROVISIONAL</option>
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="UNDER-EXAMINATION">UNDER-EXAMINATION</option>
+            <option value="FINISHED">FINISHED</option>
+            <option value="CANCELLED">CANCELLED</option>
+          </select>
+          <div class="muted">Ctrl/Cmd+Click για πολλαπλή επιλογή</div>
+        </div>
+
+        <div>
+          <button id="searchBtn" class="btn-small">Αναζήτηση</button><br/><br/>
+          <button id="exportCsvBtn" class="btn-small">Export CSV</button>
+          <button id="exportJsonBtn" class="btn-small">Export JSON</button>
+        </div>
+      </div>
+
+      <div id="countWrap" class="muted" style="margin-top:10px;"></div>
+
+      <div class="split">
+        <div>
+          <table class="theses-table" id="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Τίτλος</th>
+                <th>Φοιτητής</th>
+                <th>Κατάσταση</th>
+                <th>Έναρξη</th>
+                <th>Λήξη</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="detail card" id="detail" style="display:none;">
+          <h3 id="d_title"></h3>
+          <div class="muted" id="d_prof"></div>
+          <div class="muted" id="d_student"></div>
+
+          <div style="margin-top:8px;">
+            <strong>Τριμελής:</strong>
+            <ul id="d_committee" style="margin:6px 0 0 16px;"></ul>
+          </div>
+
+          <div style="margin-top:8px;">
+            <strong>Timeline:</strong>
+            <ul id="d_timeline" class="timeline" style="margin:6px 0 0 16px;"></ul>
+          </div>
+
+          <div style="margin-top:8px;">
+            <strong>Τελικός Βαθμός:</strong> <span id="d_grade">—</span>
+          </div>
+
+          <div style="margin-top:8px;">
+            <strong>Σύνδεσμοι:</strong>
+            <div id="d_links" class="actions-row"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

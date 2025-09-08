@@ -3,23 +3,88 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Προσκλήσεις Τριμελούς Επιτροπής</title>
+  <title>Προσκλήσεις Τριμελούς</title>
   <link rel="stylesheet" href="styles/main.css" />
+
+  <style>
+    :root { --below-line-offset: 260px; }
+    /* background εικόνα σε όλη τη σελίδα */
+    body::before{
+      content:"";
+      position:fixed; inset:0;
+      background:url('images/student.png') center/cover no-repeat;
+      filter:brightness(.45);
+      z-index:-1;
+    }
+
+    .overlay-logo { position: fixed; top: 10px; left: 40px; z-index: 5; }
+    .overlay-logo .top-line { margin-top: 8px; position: relative; z-index: 1; }
+    .top-right-title { position: fixed; top: 10px; right: 40px; z-index: 5; }
+
+    .page { 
+      max-width: 1100px; 
+      margin: var(--below-line-offset) auto 40px; 
+      padding: 0 16px; 
+      position: relative; z-index: 2; 
+    }
+    .card {
+      background: rgba(0,0,0,.45);
+      border-radius: 14px; padding: 18px; backdrop-filter: blur(2px);
+      box-shadow: 0 6px 18px rgba(0,0,0,.25);
+    }
+
+    table { width:100%; border-collapse: collapse; }
+    th, td { padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.08); }
+    tr:hover { background: rgba(255,255,255,.04); }
+    .actions { display:flex; gap:8px; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:9999px; background:#eee; color:#111; font-size:12px; }
+  </style>
+
+  <script>
+    // Δυναμικό offset κάτω από τη γραμμή
+    function setBelowLineOffset(){
+      const line = document.querySelector('.top-line');
+      if(!line) return;
+      const rect = line.getBoundingClientRect();
+      const offset = Math.max(220, Math.round(rect.bottom + 32));
+      document.documentElement.style.setProperty('--below-line-offset', offset + 'px');
+    }
+    window.addEventListener('DOMContentLoaded', setBelowLineOffset);
+    window.addEventListener('resize', setBelowLineOffset);
+  </script>
+
   <script defer src="professor-requests.js"></script>
 </head>
-<body class="professor-requests">
+<body class="committee-invitations">
+  <!-- Logo & γραμμή -->
   <div class="overlay-logo">
     <img src="images/logo.png" alt="logo" class="logo" />
     <div class="top-line"></div>
   </div>
+
+  <!-- Τίτλος πάνω δεξιά -->
   <div class="top-right-title">
-    <h2>Προσκλήσεις Τριμελούς Επιτροπής</h2>
+    <h2>Προσκλήσεις Τριμελούς</h2>
   </div>
-  <section class="requests-section">
-    <h3>Εκκρεμείς Προσκλήσεις</h3>
-    <div id="requestsList"></div>
-  </section>
-  <button class="logout-btn" onclick="window.location.href='index.html'">Αποσύνδεση</button>
-  <a href="professor-dashboard.html" class="btn-small" style="position: absolute; top: 120px; right: 60px;">Επιστροφή στο Dashboard</a>
+
+  <div class="page">
+    <section class="card">
+      <div id="count" style="opacity:.9; margin-bottom:8px;"></div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Θέμα</th>
+            <th>Φοιτητής</th>
+            <th>Επιβλέπων</th>
+            <th>Κατάσταση ΔΕ</th>
+            <th>Ενέργειες</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div id="empty" style="margin-top:10px; opacity:.9; display:none;">Δεν έχετε ενεργές προσκλήσεις.</div>
+    </section>
+  </div>
 </body>
 </html>
