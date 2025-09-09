@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Στατιστικά Καθηγητή</title>
+  <link rel="stylesheet" href="styles/main.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body.stats { background: url('images/student.png') center/cover fixed no-repeat; }
+    .overlay-logo { position: fixed; top: 10px; left: 40px; z-index: 5; }
+    .overlay-logo .top-line { margin-top: 8px; position: relative; z-index: 1; }
+    .top-right-title { position: fixed; top: 10px; right: 40px; z-index: 5; }
+    :root { --below-line-offset: 240px; }
+    .page { max-width: 1100px; margin: var(--below-line-offset) auto 36px; padding: 0 16px; position: relative; z-index: 2; }
+    .card { background: rgba(0,0,0,.48); border-radius: 14px; padding: 18px; backdrop-filter: blur(2px); box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+    .grid { display: grid; gap: 16px; grid-template-columns: 1fr; }
+    .charts { display: grid; gap: 16px; grid-template-columns: 1fr; }
+    @media (min-width: 1000px){ .charts { grid-template-columns: 1fr 1fr; } }
+    .kpi { display:flex; gap:14px; flex-wrap:wrap; margin-bottom: 8px; }
+    .kpi .pill { background:#eee; color:#111; border-radius:9999px; padding:6px 10px; font-size:14px; }
+    canvas { background: rgba(255,255,255,.06); border-radius: 12px; padding: 12px; }
+  </style>
+  <script>
+    function setBelowLineOffset(){
+      const line = document.querySelector('.top-line'); if(!line) return;
+      const r = line.getBoundingClientRect();
+      const offset = Math.max(210, Math.round(r.bottom + 30));
+      document.documentElement.style.setProperty('--below-line-offset', offset + 'px');
+    }
+    window.addEventListener('DOMContentLoaded', setBelowLineOffset);
+    window.addEventListener('resize', setBelowLineOffset);
+  </script>
+  <script defer src="professor-stats.js"></script>
+</head>
+<body class="stats">
+  <div class="overlay-logo">
+    <img src="images/logo.png" alt="logo" class="logo" />
+    <div class="top-line"></div>
+  </div>
+  <div class="top-right-title"><h2>Στατιστικά Καθηγητή</h2></div>
+
+  <div class="page">
+    <section class="card grid">
+      <div class="kpi" id="kpi"></div>
+      <div class="charts">
+        <div>
+          <h3 style="margin:8px 0;">Μέσος Χρόνος Περάτωσης (ημέρες)</h3>
+          <canvas id="timeChart" height="180"></canvas>
+        </div>
+        <div>
+          <h3 style="margin:8px 0;">Μέσος Τελικός Βαθμός</h3>
+          <canvas id="gradeChart" height="180"></canvas>
+        </div>
+      </div>
+      <div>
+        <h3 style="margin:8px 0;">Συνολικό Πλήθος Διπλωματικών</h3>
+        <canvas id="countChart" height="160"></canvas>
+      </div>
+    </section>
+
+<script>
+
+  function setBelowLineOffset(){
+    const line = document.querySelector('.top-line');
+    if(!line) return;
+    const rect = line.getBoundingClientRect();
+    const offset = Math.round(rect.bottom + 30); 
+    document.documentElement.style.setProperty('--below-line-offset', offset + 'px');
+  }
+  window.addEventListener('DOMContentLoaded', setBelowLineOffset);
+  window.addEventListener('resize', setBelowLineOffset);
+</script>
+
+  </div>
+</body>
+</html>

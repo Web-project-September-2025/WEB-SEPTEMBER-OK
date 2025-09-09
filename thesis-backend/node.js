@@ -1041,6 +1041,94 @@ app.get("/professors", auth, (req, res) => {
   });
 });
 
+app.get("/professor/stats", auth, requireProfessor, async (req, res) => {
+  const me = req.user.UserID;
+  const p = (sql, params=[]) => new Promise((resolve, reject) =>
+    db.query(sql, params, (err, rows) => err ? reject(err) : resolve(rows))
+  );
+
+  try {
+    // Πλήθη
+    const qSupTotal = `SELECT COUNT(*) AS cnt FROM thesis WHERE ProfessorID=?`;
+    const qComTotal = `
+      SELECT COUNT(DISTINCT t.ThesisID) AS cnt
+      FROM thesis t
+      JOIN requests r ON r.ThesisID=t.ThesisID AND r.ReqStatus='ACCEPTED'
+      WHERE r.ProfessorID=?
+    `;
+
+    // Μέσος χρόνος περάτωσης (μόνο FINISHED)
+    const qSupAvgDays = `
+      SELECT AVG(DATEDIFF(t.EndDate, t.StartDate)) AS avgDays
+      FROM thesis t
+      WHERE t.ProfessorID=? AND t.Status='FINISHED'
+    `;
+    const qComAvgDays = `
+      SELECT AVG(DATEDIFF(t.EndDate, t.StartDate)) AS avgDays
+      FROM thesis t
+      JOIN requests r ON r.ThesisID=t.ThesisID AND r.ReqStatus='ACCEPTED'
+      WHERE r.ProfessorID=? AND t.Status='FINISHED'
+    `;
+
+    // Μέσος τελικός βαθμός ανά διπλωματική (avg grades per thesis) και μετά μέσος όρος αυτών
+    const qSupMeanGrade = `
+      SELECT AVG(x.thesis_avg) AS meanFinalGrade
+      FROM (
+        SELECT e.ThesisID, AVG(g.Grade) AS thesis_avg
+        FROM exam e
+        JOIN grade g ON g.ExamID = e.ExamID
+        JOIN thesis t ON t.ThesisID = e.ThesisID
+        WHERE t.ProfessorID = ? AND t.Status='FINISHED'
+        GROUP BY e.ThesisID
+      ) x
+    `;
+    const qComMeanGrade = `
+      SELECT AVG(x.thesis_avg) AS meanFinalGrade
+      FROM (
+        SELECT e.ThesisID, AVG(g.Grade) AS thesis_avg
+        FROM exam e
+        JOIN grade g ON g.ExamID = e.ExamID
+        JOIN thesis t ON t.ThesisID = e.ThesisID
+        JOIN requests r ON r.ThesisID = t.ThesisID AND r.ReqStatus='ACCEPTED'
+        WHERE r.ProfessorID = ? AND t.Status='FINISHED'
+        GROUP BY e.ThesisID
+      ) x
+    `;
+
+    const [
+      supTotal, comTotal,
+      supAvgDays, comAvgDays,
+      supMeanGrade, comMeanGrade
+    ] = await Promise.all([
+      p(qSupTotal, [me]),
+      p(qComTotal, [me]),
+      p(qSupAvgDays, [me]),
+      p(qComAvgDays, [me]),
+      p(qSupMeanGrade, [me]),
+      p(qComMeanGrade, [me]),
+    ]);
+
+    const safeNum = (v, d=0) => (v==null || Number.isNaN(Number(v)) ? d : Number(v));
+
+    const out = {
+      supervisor: {
+        total: safeNum(supTotal[0]?.cnt),
+        meanCompletionDays: safeNum(supAvgDays[0]?.avgDays, 0),
+        meanGrade: safeNum(supMeanGrade[0]?.meanFinalGrade, 0),
+      },
+      committee: {
+        total: safeNum(comTotal[0]?.cnt),
+        meanCompletionDays: safeNum(comAvgDays[0]?.avgDays, 0),
+        meanGrade: safeNum(comMeanGrade[0]?.meanFinalGrade, 0),
+      }
+    };
+
+    res.json(out);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Σφάλμα υπολογισμού στατιστικών." });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
