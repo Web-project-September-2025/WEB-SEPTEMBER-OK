@@ -81,40 +81,71 @@ async function loadPage() {
 }
 loadPage();
 
+// ---------- helpers ----------
+function fmt(dt){
+  if (!dt) return '—';
+  // αναμένεται "YYYY-MM-DD HH:MM:SS" λόγω dateStrings:true
+  const s = String(dt).replace('T', ' ');
+  return s.slice(0, 16); // YYYY-MM-DD HH:MM
+}
+// -----------------------------
+
 async function loadInvites() {
   invitesWrap.innerHTML = 'Φόρτωση...';
   if (!currentThesisId) { invitesWrap.innerHTML = ''; return; }
-  const invites = await fetchInvites(currentThesisId);{
-     const accepted = invites.filter(r => r.ReqStatus === 'ACCEPTED').length;
-  const hasSlots = accepted < 2;
-  setInviteEnabled(hasSlots);
-  }
+
+  const invites = await fetchInvites(currentThesisId);
+
+  // enable/disable αναζήτηση/πρόσκληση ανάλογα με τα accepted
+  const accepted = invites.filter(r => r.ReqStatus === 'ACCEPTED').length;
+  setInviteEnabled(accepted < 2);
+
   if (!invites.length) {
     invitesWrap.innerHTML = '<div class="muted">Δεν υπάρχουν προσκλήσεις για αυτή τη ΔΕ.</div>';
     return;
   }
+
   const ul = document.createElement('ul');
   ul.className = 'list';
+
   invites.forEach(r => {
     const li = document.createElement('li');
     li.className = 'item';
+
+    const sentAt = fmt(r.CreatedAt);
+    const accAt  = r.AcceptedAt ? fmt(r.AcceptedAt) : null;
+    const rejAt  = r.RejectedAt ? fmt(r.RejectedAt) : null;
+
     const statusPill = `<span class="pill">${r.ReqStatus}</span>`;
+
+    const datesLine = `
+      <div class="muted">
+        Αποστολή: ${sentAt}
+        ${accAt ? ` · Αποδοχή: ${accAt}` : ""}
+        ${rejAt ? ` · Απόρριψη: ${rejAt}` : ""}
+      </div>
+    `;
+
     li.innerHTML = `
       <div>
         <div><strong>${r.ProfessorName || 'Καθηγητής'}</strong> — <span class="muted">${r.Email || ''}</span></div>
+        ${datesLine}
         <div class="muted">ReqID: ${r.ReqID}</div>
       </div>
-      <div>${statusPill}
+      <div>
+        ${statusPill}
         ${r.ReqStatus === 'REJECTED'
-          ? `<button class="btn-small" data-reinvite="${r.ProfessorID}">Επαναποστολή</button>` : ''}
+          ? `<button class="btn-small" data-reinvite="${r.ProfessorID}">Επαναποστολή</button>`
+          : ''}
       </div>
     `;
     ul.appendChild(li);
   });
+
   invitesWrap.innerHTML = '';
   invitesWrap.appendChild(ul);
 
-  // επαναποστολή (γυρίζει σε QUEUED)
+  // επαναποστολή (γυρίζει σε QUEUED, CreatedAt=NOW(), μηδενίζει AcceptedAt/RejectedAt)
   ul.onclick = async (e) => {
     const btn = e.target.closest('button[data-reinvite]');
     if (!btn) return;
@@ -129,23 +160,20 @@ async function loadInvites() {
       if (!res.ok) { alert(d.message || 'Αποτυχία.'); return; }
       await loadInvites();
       alert(d.message || 'OK');
-      // ανανέωσε και τη λίστα καθηγητών για να κρυφτεί από τα διαθέσιμα
-      if (qProf.value.trim()) await runSearch();
+      if (qProf.value.trim()) await runSearch(); // ανανέωσε τα διαθέσιμα
     } catch {
       alert('Σφάλμα επικοινωνίας.');
     }
-  }
+  };
 }
 
 function setInviteEnabled(enabled){
   qProf.disabled = !enabled;
   searchBtn.disabled = !enabled;
-  // Γκριζάρισμα/μήνυμα στη λίστα αποτελεσμάτων
   if (!enabled) {
     profResults.innerHTML = '<div class="muted">Η τριμελής είναι πλήρης (2/2). Δεν μπορείτε να στείλετε άλλες προσκλήσεις.</div>';
   }
 }
-
 
 async function runSearch() {
   profResults.innerHTML = 'Αναζήτηση...';

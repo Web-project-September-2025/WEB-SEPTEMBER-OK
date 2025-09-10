@@ -53,7 +53,7 @@ const db = mysql.createConnection({
   user: "root",
   password: "2004",
   database: "thesisdetails",
-    dateStrings: true,
+  dateStrings: true,
 });
 db.connect((err) => {
   if (err) throw err;
@@ -181,7 +181,7 @@ app.put("/professor/topics/:id", auth, requireProfessor, upload.single("pdfFile"
 
     const fields = [];
     const params = [];
-  if (status === 'UNDER-ASSIGNMENT') {
+    if (status === 'UNDER-ASSIGNMENT') {
       fields.push("StudentID = NULL");
       fields.push("AssignmentConfirmed = 0");
     }
@@ -271,11 +271,11 @@ app.get("/students", auth, requireProfessor, (req, res) => {
   });
 });
 
-//
-// ===== Προσωρινή ανάθεση / Ακύρωση =====
+// ==================================================================
+// Προσωρινή ανάθεση / Ακύρωση (σβήνει/καθαρίζει και τις προσκλήσεις)
 //  - Ανάθεση:  UNDER-ASSIGNMENT + StudentID NULL  ->  PROVISIONAL + StudentID
-//  - Ακύρωση:  PROVISIONAL                       ->  UNDER-ASSIGNMENT + StudentID NULL
-//
+//  - Ακύρωση:  PROVISIONAL (και όχι confirmed)    ->  UNDER-ASSIGNMENT + StudentID NULL + delete invitations
+// ==================================================================
 app.put("/thesis/:id/assign", auth, requireProfessor, (req, res) => {
   const thesisId = Number(req.params.id);
   const { studentId } = req.body; // null => ακύρωση
@@ -293,10 +293,11 @@ app.put("/thesis/:id/assign", auth, requireProfessor, (req, res) => {
       res.status(403).json({ message: "Δεν είστε ο επιβλέπων του θέματος." }); return;
     }
 
-    // --- Ακύρωση προσωρινής ανάθεσης ---
+    // === ΑΚΥΡΩΣΗ ΠΡΟΣΩΡΙΝΗΣ ΑΝΑΘΕΣΗΣ ===
     if (studentId == null) {
       if (t.Status !== 'PROVISIONAL' || Number(t.AssignmentConfirmed) === 1) {
-        res.status(409).json({ message: "Ακύρωση επιτρέπεται μόνο σε προσωρινά (PROVISIONAL) θέματα." }); return;
+        res.status(409).json({ message: "Ακύρωση επιτρέπεται μόνο σε προσωρινά (PROVISIONAL) θέματα χωρίς οριστικοποίηση." });
+        return;
       }
       const upd = `
         UPDATE thesis
@@ -307,23 +308,27 @@ app.put("/thesis/:id/assign", auth, requireProfessor, (req, res) => {
       `;
       db.query(upd, [thesisId], (e2) => {
         if (e2) { res.status(500).send(e2); return; }
-        res.json({ message: "Ακυρώθηκε η προσωρινή ανάθεση." });
+        // Διαγραφή ΟΛΩΝ των προσκλήσεων για τη συγκεκριμένη ΔΕ
+        db.query(`DELETE FROM requests WHERE ThesisID=?`, [thesisId], () => {
+          res.json({ message: "Ακυρώθηκε η προσωρινή ανάθεση και διαγράφηκαν οι προσκλήσεις τριμελούς." });
+        });
       });
       return;
     }
 
-    // --- ΠΡΟΣΩΡΙΝΗ ΑΝΑΘΕΣΗ ---
+    // === ΠΡΟΣΩΡΙΝΗ ΑΝΑΘΕΣΗ ΣΕ ΦΟΙΤΗΤΗ ===
     if (t.Status !== 'UNDER-ASSIGNMENT' || t.StudentID != null) {
-      res.status(409).json({ message: "Ανάθεση επιτρέπεται μόνο σε διαθέσιμα (UNDER-ASSIGNMENT) χωρίς φοιτητή." }); return;
+      res.status(409).json({ message: "Ανάθεση επιτρέπεται μόνο σε διαθέσιμα (UNDER-ASSIGNMENT) θέματα χωρίς φοιτητή." });
+      return;
     }
 
-    // Υπάρχει φοιτητής;
+    // Επαλήθευση φοιτητή
     const qStu = "SELECT UserID FROM users WHERE UserID = ? AND Role='STUDENT' LIMIT 1";
     db.query(qStu, [studentId], (errS, rS) => {
       if (errS) { res.status(500).send(errS); return; }
       if (!rS.length) { res.status(404).json({ message: "Δεν βρέθηκε φοιτητής με αυτό το ΑΜ/ID." }); return; }
 
-      // Ο φοιτητής δεν πρέπει να έχει άλλη διπλωματική (προσωρινή ή οριστική)
+      // Ο φοιτητής να μην έχει άλλη (PROVISIONAL/ACTIVE/UNDER-EXAMINATION/FINISHED)
       const qExists = `
         SELECT COUNT(*) AS cnt
         FROM thesis
@@ -346,15 +351,17 @@ app.put("/thesis/:id/assign", auth, requireProfessor, (req, res) => {
         `;
         db.query(upd, [studentId, thesisId], (e3) => {
           if (e3) { res.status(500).send(e3); return; }
-          res.json({ message: "Το θέμα ανατέθηκε προσωρινά (PROVISIONAL) στον φοιτητή." });
+          // Καθαρίζουμε τυχόν παλιές προσκλήσεις από προηγούμενο κύκλο
+          db.query(`DELETE FROM requests WHERE ThesisID=?`, [thesisId], () => {
+            res.json({ message: "Το θέμα ανατέθηκε προσωρινά (PROVISIONAL) στον φοιτητή." });
+          });
         });
       });
     });
   });
 });
 
-
-// ===== Λοιπά endpoints (όπως πριν) =====
+// ===== Δημόσια/βασικά =====
 app.get("/theses", (req, res) => {
   const statuses = (req.query.statuses || "")
     .split(",").map((s) => s.trim()).filter(Boolean);
@@ -402,16 +409,20 @@ app.get("/thesis/:id", (req, res) => {
   });
 });
 
-app.get("/thesis/:id/requests", (req, res) => {
-  const thesisId = req.params.id;
+// Οι προσκλήσεις μιας ΔΕ (με timestamps)
+app.get("/thesis/:id/requests", auth, requireProfessor, (req, res) => {
+  const thesisId = Number(req.params.id);
   const sql = `
-    SELECT r.*, u.UserName AS ProfessorName, u.Email
+    SELECT
+      r.ReqID, r.ProfessorID, r.ReqStatus, r.CreatedAt, r.AcceptedAt, r.RejectedAt,
+      u.UserName AS ProfessorName, u.Email
     FROM requests r
-    JOIN users u ON r.ProfessorID = u.UserID
+    JOIN users u ON u.UserID = r.ProfessorID
     WHERE r.ThesisID = ?
+    ORDER BY r.ReqID DESC
   `;
   db.query(sql, [thesisId], (err, rows) => {
-    if (err) { res.status(500).send(err); return; }
+    if (err) return res.status(500).send(err);
     res.json(rows);
   });
 });
@@ -427,34 +438,53 @@ app.post("/thesis/:id/protocol", (req, res) => {
   });
 });
 
-app.put("/thesis/:id/cancel", (req, res) => {
-  const thesisId = req.params.id;
-  const { gsNumber, reason } = req.body;
-  if (!gsNumber || !reason) { res.status(400).json({ message: "Απαιτούνται ΑΠ ΓΣ και λόγος ακύρωσης." }); return; }
+// Ακύρωση ΔΕ από τον επιβλέποντα (μόνο σε ACTIVE και μόνο μετά από 2 έτη από ActiveSince)
+app.put("/thesis/:id/cancel", auth, requireProfessor, (req, res) => {
+  const thesisId = Number(req.params.id);
+  const me = req.user.UserID;
+  const { gsNumber } = req.body; // ο λόγος καταχωρείται αυτόματα "από Διδάσκοντα"
 
-  const checkSql = "SELECT Status FROM thesis WHERE ThesisID = ? LIMIT 1";
-  db.query(checkSql, [thesisId], (err, rows) => {
-    if (err) { res.status(500).send(err); return; }
-    if (!rows.length) { res.status(404).json({ message: "Δεν βρέθηκε διπλωματική." }); return; }
-    if (rows[0].Status !== "ACTIVE") {
-      res.status(409).json({ message: "Ακύρωση επιτρέπεται μόνο για ενεργές διπλωματικές." }); return;
-    }
-    const sql = `
-      UPDATE thesis
-      SET Status = 'CANCELLED',
-          CancellationGSNumber = ?,
-          CancellationYear = YEAR(CURDATE()),
-          CancellationReason = ?,
-          IsCancelled = 1,
-          EndDate = CURDATE()
-      WHERE ThesisID = ?
-    `;
-    db.query(sql, [gsNumber, reason, thesisId], (err2) => {
-      if (err2) { res.status(500).send(err2); return; }
-      res.json({ message: "Η ΔΕ ακυρώθηκε επιτυχώς." });
+  if (!gsNumber) return res.status(400).json({ message: "Απαιτείται Αριθμός Πρωτοκόλλου ΓΣ." });
+
+  const q = `
+    SELECT ThesisID, ProfessorID, Status, ActiveSince, StartDate
+    FROM thesis WHERE ThesisID=? LIMIT 1
+  `;
+  db.query(q, [thesisId], (err, rows) => {
+    if (err) return res.status(500).send(err);
+    if (!rows.length) return res.status(404).json({ message: "Δεν βρέθηκε διπλωματική." });
+
+    const t = rows[0];
+    if (t.ProfessorID !== me) return res.status(403).json({ message: "Μόνο ο επιβλέπων μπορεί να ακυρώσει." });
+    if (t.Status !== "ACTIVE") return res.status(409).json({ message: "Ακύρωση επιτρέπεται μόνο για ενεργές (ACTIVE) διπλωματικές." });
+
+    // Υπολογισμός 2 ετών από ActiveSince (fallback σε StartDate αν λείπει)
+    const baseDate = t.ActiveSince || t.StartDate;
+    if (!baseDate) return res.status(409).json({ message: "Δεν υπάρχει διαθέσιμη ημερομηνία οριστικής ανάθεσης." });
+
+    db.query(`SELECT DATEDIFF(CURDATE(), ?) AS daysDiff`, [baseDate], (e2, dRows) => {
+      if (e2) return res.status(500).send(e2);
+      const days = Number(dRows?.[0]?.daysDiff || 0);
+      if (days < 730) return res.status(409).json({ message: "Δεν έχουν συμπληρωθεί 2 έτη από την οριστική ανάθεση." });
+
+      const sql = `
+        UPDATE thesis
+        SET Status='CANCELLED',
+            CancellationGSNumber=?,
+            CancellationYear=YEAR(CURDATE()),
+            CancellationReason='από Διδάσκοντα',
+            IsCancelled=1,
+            EndDate=CURDATE()
+        WHERE ThesisID=?
+      `;
+      db.query(sql, [gsNumber, thesisId], (e3) => {
+        if (e3) return res.status(500).send(e3);
+        res.json({ message: "Η ΔΕ ακυρώθηκε επιτυχώς." });
+      });
     });
   });
 });
+
 
 app.get("/thesis/:id/finishable", (req, res) => {
   const thesisId = req.params.id;
@@ -550,8 +580,7 @@ app.post("/import-users", (req, res) => {
     });
 });
 
-
-//List for Professor
+// ===== Λίστα/Export για καθηγητή =====
 app.get("/professor/theses", auth, requireProfessor, (req, res) => {
   const me = req.user.UserID;
   const role = String(req.query.role || "all").toLowerCase();
@@ -575,7 +604,6 @@ app.get("/professor/theses", auth, requireProfessor, (req, res) => {
   `;
   const params = [];
 
-  // Φίλτρο ρόλου
   if (role === "supervisor") {
     sql += " AND t.ProfessorID = ? ";
     params.push(me);
@@ -583,18 +611,15 @@ app.get("/professor/theses", auth, requireProfessor, (req, res) => {
     sql += " AND r.ProfessorID = ? ";
     params.push(me);
   } else {
-    // all: είμαι επιβλέπων ή είμαι στην τριμελή
     sql += " AND (t.ProfessorID = ? OR r.ProfessorID = ?) ";
     params.push(me, me);
   }
 
-  // Φίλτρο καταστάσεων
   if (statuses.length) {
     sql += ` AND t.Status IN (${statuses.map(() => "?").join(",")}) `;
     params.push(...statuses);
   }
 
-  // Free text: τίτλος ή όνομα φοιτητή
   if (q) {
     sql += " AND (t.Title LIKE ? OR s.UserName LIKE ?) ";
     params.push(`%${q}%`, `%${q}%`);
@@ -663,7 +688,7 @@ app.get("/thesis/:id/full", auth, requireProfessor, (req, res) => {
           if (e4) { res.status(500).send(e4); return; }
           const finalGrade = gRes?.[0]?.FinalGrade ?? null;
 
-          const qSub = `
+        const qSub = `
             SELECT *
             FROM submissions
             WHERE ThesisID = ?
@@ -674,18 +699,11 @@ app.get("/thesis/:id/full", auth, requireProfessor, (req, res) => {
             if (e5) { res.status(500).send(e5); return; }
             const latestSubmission = subs?.[0] || null;
 
-            // Συνθετικό timeline όσο γίνεται από τα διαθέσιμα δεδομένα
             const timeline = [];
-            if (t.StartDate) {
-              timeline.push({ date: t.StartDate, label: "Δημιουργία/Έναρξη" });
-            }
+            if (t.StartDate) timeline.push({ date: t.StartDate, label: "Δημιουργία/Έναρξη" });
             if (t.Status === "UNDER-EXAMINATION" || t.Status === "FINISHED") {
-              // Αν υπάρχει ημερομηνία εξέτασης (παίρνουμε την 1η/τελευταία)
               if (exams?.length) {
-                timeline.push({
-                  date: exams[0].ExamDate,
-                  label: "Ορίστηκε/έγινε εξέταση"
-                });
+                timeline.push({ date: exams[0].ExamDate, label: "Ορίστηκε/έγινε εξέταση" });
               } else {
                 timeline.push({ date: null, label: "Υπό εξέταση (ημ/νία άγνωστη)" });
               }
@@ -696,16 +714,9 @@ app.get("/thesis/:id/full", auth, requireProfessor, (req, res) => {
                 label: t.Status === "FINISHED" ? "Περάτωση" : "Ακύρωση"
               });
             }
-            // Πάντα βάζουμε το τρέχον status ως τελευταία κατάσταση
             timeline.push({ date: null, label: `Τρέχουσα κατάσταση: ${t.Status}` });
 
-            res.json({
-              thesis: t,
-              committee,
-              timeline,
-              finalGrade,
-              latestSubmission
-            });
+            res.json({ thesis: t, committee, timeline, finalGrade, latestSubmission });
           });
         });
       });
@@ -721,14 +732,10 @@ app.get("/thesis/:id/full", auth, requireProfessor, (req, res) => {
     format=csv|json   (default: json)
 */
 app.get("/professor/theses/export", auth, requireProfessor, (req, res) => {
-  // επαναχρησιμοποιούμε το query της /professor/theses
-  req.url = req.url.replace("/professor/theses/export", "/professor/theses");
-  // Πάρε τα ίδια rows:
   const role = String(req.query.role || "all").toLowerCase();
   const statuses = (req.query.statuses || "");
   const q = String(req.query.q || "").trim();
 
-  // Κάνουμε έναν εσωτερικό χειρισμό, όχι proxy
   const me = req.user.UserID;
 
   let sql = `
@@ -771,7 +778,6 @@ app.get("/professor/theses/export", auth, requireProfessor, (req, res) => {
 
     const format = String(req.query.format || "json").toLowerCase();
     if (format === "csv") {
-      // απλό CSV export
       const headers = [
         "ThesisID","Title","Status","StartDate","EndDate","Progress",
         "StudentName","StudentAM","ProfessorName","RepositoryLink"
@@ -802,8 +808,7 @@ app.get("/professor/theses/export", auth, requireProfessor, (req, res) => {
   });
 });
 
-
-// Προσκλήσεις Τριμελούς για Διδάσκοντες
+// ===== Προσκλήσεις Τριμελούς για Διδάσκοντες =====
 
 // Λίστα ενεργών προσκλήσεων (QUEUED) για τον συνδεδεμένο καθηγητή
 app.get("/professor/invitations", auth, requireProfessor, (req, res) => {
@@ -831,91 +836,69 @@ app.get("/professor/invitations", auth, requireProfessor, (req, res) => {
   });
 });
 
-// Αποδοχή πρόσκλησης
-// Αποδοχή πρόσκλησης (με έλεγχο slots και αυτόματη προαγωγή ΔΕ)
+// ΑΠΟΔΟΧΗ πρόσκλησης (με timestamps & προαγωγή σε ACTIVE)
 app.put("/requests/:id/accept", auth, requireProfessor, (req, res) => {
   const id = Number(req.params.id);
   const me = req.user.UserID;
 
-  const qReq = `
-    SELECT ReqID, ProfessorID, ReqStatus, ThesisID
-    FROM requests
-    WHERE ReqID = ? LIMIT 1
-  `;
+  const qReq = `SELECT ReqID, ProfessorID, ReqStatus, ThesisID FROM requests WHERE ReqID=? LIMIT 1`;
   db.query(qReq, [id], (err, rows) => {
-    if (err) { res.status(500).send(err); return; }
-    if (!rows.length) { res.status(404).json({ message: "Η πρόσκληση δεν βρέθηκε." }); return; }
+    if (err) return res.status(500).send(err);
+    if (!rows.length) return res.status(404).json({ message: "Η πρόσκληση δεν βρέθηκε." });
 
     const r = rows[0];
-    if (r.ProfessorID !== me) { res.status(403).json({ message: "Δεν είναι δική σας πρόσκληση." }); return; }
-    if (r.ReqStatus !== 'QUEUED') { res.status(409).json({ message: "Η πρόσκληση δεν είναι πλέον ενεργή." }); return; }
+    if (r.ProfessorID !== me) return res.status(403).json({ message: "Δεν είναι δική σας πρόσκληση." });
+    if (r.ReqStatus !== 'QUEUED') return res.status(409).json({ message: "Η πρόσκληση δεν είναι πλέον ενεργή." });
 
-    // Πόσοι έχουν ήδη αποδεχθεί;
-    const qCnt = `SELECT COUNT(*) AS cnt FROM requests WHERE ThesisID=? AND ReqStatus='ACCEPTED'`;
-    db.query(qCnt, [r.ThesisID], (e2, cRows) => {
-      if (e2) { res.status(500).send(e2); return; }
-      const already = Number(cRows?.[0]?.cnt || 0);
-      if (already >= 2) {
-        res.status(409).json({ message: "Η τριμελής είναι ήδη πλήρης (2 αποδοχές)." }); return;
-      }
+    db.query(`UPDATE requests SET ReqStatus='ACCEPTED', AcceptedAt=NOW() WHERE ReqID=?`, [id], (e1) => {
+      if (e1) return res.status(500).send(e1);
 
-      // Κάνε ACCEPT
-      db.query(`UPDATE requests SET ReqStatus='ACCEPTED' WHERE ReqID=?`, [id], (e3) => {
-        if (e3) { res.status(500).send(e3); return; }
+      db.query(`SELECT COUNT(*) AS cnt FROM requests WHERE ThesisID=? AND ReqStatus='ACCEPTED'`, [r.ThesisID], (e2, cRows) => {
+        if (e2) return res.status(500).send(e2);
+        const accepted = Number(cRows?.[0]?.cnt || 0);
 
-        // Ξαναμέτρα – αν έφτασε 2, προάγαγε τη ΔΕ σε UNDER-EXAMINATION
-        db.query(qCnt, [r.ThesisID], (e4, c2) => {
-          if (e4) { res.status(500).send(e4); return; }
-          const now = Number(c2?.[0]?.cnt || 0);
-
-          if (now >= 2) {
-            // Άλλαξε status ΜΟΝΟ αν είναι ακόμη PROVISIONAL
-            const upThesis = `
-              UPDATE thesis
-              SET Status='UNDER-EXAMINATION'
-              WHERE ThesisID=? AND Status='PROVISIONAL'
-            `;
-            db.query(upThesis, [r.ThesisID], () => {
-              // προαιρετικά κλείσε τις υπόλοιπες εκκρεμείς προσκλήσεις
-              db.query(
-                `UPDATE requests SET ReqStatus='REJECTED' WHERE ThesisID=? AND ReqStatus='QUEUED'`,
-                [r.ThesisID],
-                () => {
-                  res.json({ message: "Η πρόσκληση έγινε αποδεκτή. Η τριμελής συμπληρώθηκε και η ΔΕ πέρασε σε UNDER-EXAMINATION." });
-                }
-              );
-            });
-          } else {
-            res.json({ message: "Η πρόσκληση έγινε αποδεκτή." });
-          }
-        });
+        if (accepted >= 2) {
+          // Πλέον ACTIVE (όχι UNDER-EXAMINATION) + stamped ActiveSince
+          const up = `UPDATE thesis SET Status='ACTIVE', ActiveSince=IFNULL(ActiveSince, CURDATE()) WHERE ThesisID=? AND Status='PROVISIONAL'`;
+          db.query(up, [r.ThesisID], () => {
+            // κλείσε ό,τι QUEUED έμεινε
+            db.query(
+              `UPDATE requests SET ReqStatus='REJECTED', RejectedAt=NOW() WHERE ThesisID=? AND ReqStatus='QUEUED'`,
+              [r.ThesisID],
+              () => res.json({ message: "Αποδοχή. Συμπληρώθηκε η τριμελής και η ΔΕ πέρασε σε ACTIVE." })
+            );
+          });
+        } else {
+          res.json({ message: "Η πρόσκληση έγινε αποδεκτή." });
+        }
       });
     });
   });
 });
 
-// Απόρριψη πρόσκλησης
+
+// ΑΠΟΡΡΙΨΗ πρόσκλησης (με timestamps)
 app.put("/requests/:id/reject", auth, requireProfessor, (req, res) => {
   const id = Number(req.params.id);
   const me = req.user.UserID;
 
-  const q = "SELECT ReqID, ProfessorID, ReqStatus FROM requests WHERE ReqID = ? LIMIT 1";
+  const q = `SELECT ReqID, ProfessorID, ReqStatus FROM requests WHERE ReqID=? LIMIT 1`;
   db.query(q, [id], (err, rows) => {
-    if (err) { res.status(500).send(err); return; }
-    if (!rows.length) { res.status(404).json({ message: "Η πρόσκληση δεν βρέθηκε." }); return; }
-    const r = rows[0];
-    if (r.ProfessorID !== me) { res.status(403).json({ message: "Δεν είναι δική σας πρόσκληση." }); return; }
-    if (r.ReqStatus !== 'QUEUED') { res.status(409).json({ message: "Η πρόσκληση δεν είναι πλέον ενεργή." }); return; }
+    if (err) return res.status(500).send(err);
+    if (!rows.length) return res.status(404).json({ message: "Η πρόσκληση δεν βρέθηκε." });
 
-    const upd = "UPDATE requests SET ReqStatus='REJECTED' WHERE ReqID = ?";
-    db.query(upd, [id], (e2) => {
-      if (e2) { res.status(500).send(e2); return; }
+    const r = rows[0];
+    if (r.ProfessorID !== me) return res.status(403).json({ message: "Δεν είναι δική σας πρόσκληση." });
+    if (r.ReqStatus !== 'QUEUED') return res.status(409).json({ message: "Η πρόσκληση δεν είναι πλέον ενεργή." });
+
+    db.query(`UPDATE requests SET ReqStatus='REJECTED', RejectedAt=NOW() WHERE ReqID=?`, [id], (e2) => {
+      if (e2) return res.status(500).send(e2);
       res.json({ message: "Η πρόσκληση απορρίφθηκε." });
     });
   });
 });
 
-// Αποστολή πρόσκλησης σε καθηγητή για τριμελή (ΜΟΝΟ ο επιβλέπων, μόνο όταν είναι PROVISIONAL)
+// Αποστολή πρόσκλησης σε καθηγητή για τριμελή (μόνο ο επιβλέπων, μόνο PROVISIONAL)
 app.post("/thesis/:id/invite", auth, requireProfessor, (req, res) => {
   const thesisId = Number(req.params.id);
   const toProfessorId = Number(req.body.professorId);
@@ -931,9 +914,8 @@ app.post("/thesis/:id/invite", auth, requireProfessor, (req, res) => {
     const t = tRows[0];
 
     if (t.ProfessorID !== me) { res.status(403).json({ message: "Μόνο ο επιβλέπων μπορεί να στείλει προσκλήσεις." }); return; }
-    if (t.Status !== 'PROVISIONAL') { res.status(409).json({ message: "Προσκλησεις επιτρέπονται μόνο όταν η ΔΕ είναι PROVISIONAL." }); return; }
+    if (t.Status !== 'PROVISIONAL') { res.status(409).json({ message: "Προσκλήσεις επιτρέπονται μόνο όταν η ΔΕ είναι PROVISIONAL." }); return; }
 
-    // Slots: έχει ήδη 2 ACCEPTED;
     const qAccepted = `SELECT COUNT(*) AS cnt FROM requests WHERE ThesisID=? AND ReqStatus='ACCEPTED'`;
     db.query(qAccepted, [thesisId], (e2, aRows) => {
       if (e2) { res.status(500).send(e2); return; }
@@ -941,12 +923,10 @@ app.post("/thesis/:id/invite", auth, requireProfessor, (req, res) => {
         res.status(409).json({ message: "Η τριμελής είναι ήδη πλήρης (2 αποδοχές)." }); return;
       }
 
-      // Ο παραλήπτης είναι καθηγητής;
       db.query(`SELECT UserID FROM users WHERE UserID=? AND Role='PROFESSOR' LIMIT 1`, [toProfessorId], (e3, pRows) => {
         if (e3) { res.status(500).send(e3); return; }
         if (!pRows.length) { res.status(404).json({ message: "Ο παραλήπτης δεν είναι έγκυρος Καθηγητής." }); return; }
 
-        // Υπάρχει ήδη εγγραφή;
         const qExists = `
           SELECT ReqID, ReqStatus FROM requests
           WHERE ThesisID=? AND ProfessorID=? LIMIT 1
@@ -956,7 +936,7 @@ app.post("/thesis/:id/invite", auth, requireProfessor, (req, res) => {
 
           if (!exRows.length) {
             db.query(
-              `INSERT INTO requests (ThesisID, ProfessorID, ReqStatus) VALUES (?, ?, 'QUEUED')`,
+              `INSERT INTO requests (ThesisID, ProfessorID, ReqStatus, CreatedAt) VALUES (?, ?, 'QUEUED', NOW())`,
               [thesisId, toProfessorId],
               (e5) => {
                 if (e5) { res.status(500).send(e5); return; }
@@ -968,10 +948,14 @@ app.post("/thesis/:id/invite", auth, requireProfessor, (req, res) => {
 
           const ex = exRows[0];
           if (ex.ReqStatus === 'REJECTED') {
-            db.query(`UPDATE requests SET ReqStatus='QUEUED' WHERE ReqID=?`, [ex.ReqID], (e6) => {
-              if (e6) { res.status(500).send(e6); return; }
-              res.json({ message: "Η πρόσκληση επαναστάλθηκε." });
-            });
+            db.query(
+              `UPDATE requests SET ReqStatus='QUEUED', CreatedAt=NOW(), AcceptedAt=NULL, RejectedAt=NULL WHERE ReqID=?`,
+              [ex.ReqID],
+              (e6) => {
+                if (e6) { res.status(500).send(e6); return; }
+                res.json({ message: "Η πρόσκληση επαναστάλθηκε." });
+              }
+            );
           } else {
             res.status(409).json({ message: "Υπάρχει ήδη ενεργή πρόσκληση ή έχει γίνει αποδοχή." });
           }
@@ -980,8 +964,6 @@ app.post("/thesis/:id/invite", auth, requireProfessor, (req, res) => {
     });
   });
 });
-
-
 
 // Λίστα PROVISIONAL διπλωματικών του τρέχοντος καθηγητή (για αποστολή προσκλήσεων)
 app.get("/professor/provisional-theses", auth, requireProfessor, (req, res) => {
@@ -1000,7 +982,7 @@ app.get("/professor/provisional-theses", auth, requireProfessor, (req, res) => {
   });
 });
 
-// Λίστα καθηγητών (με προαιρετικά φίλτρα q, excludeMe, excludeThesisId)
+// Λίστα καθηγητών (με φίλτρα q, excludeMe, excludeThesisId)
 app.get("/professors", auth, (req, res) => {
   const q = String(req.query.q || "").trim();
   const excludeMe = String(req.query.excludeMe || "") === "1";
@@ -1022,7 +1004,6 @@ app.get("/professors", auth, (req, res) => {
     params.push(`%${q}%`);
   }
   if (excludeThesisId) {
-    // απόκλεισε όσους είναι ήδη προσκεκλημένοι/δεκτοί στη συγκεκριμένη ΔΕ
     sql += `
       AND u.UserID NOT IN (
         SELECT r.ProfessorID
@@ -1048,7 +1029,6 @@ app.get("/professor/stats", auth, requireProfessor, async (req, res) => {
   );
 
   try {
-    // Πλήθη
     const qSupTotal = `SELECT COUNT(*) AS cnt FROM thesis WHERE ProfessorID=?`;
     const qComTotal = `
       SELECT COUNT(DISTINCT t.ThesisID) AS cnt
@@ -1056,8 +1036,6 @@ app.get("/professor/stats", auth, requireProfessor, async (req, res) => {
       JOIN requests r ON r.ThesisID=t.ThesisID AND r.ReqStatus='ACCEPTED'
       WHERE r.ProfessorID=?
     `;
-
-    // Μέσος χρόνος περάτωσης (μόνο FINISHED)
     const qSupAvgDays = `
       SELECT AVG(DATEDIFF(t.EndDate, t.StartDate)) AS avgDays
       FROM thesis t
@@ -1069,8 +1047,6 @@ app.get("/professor/stats", auth, requireProfessor, async (req, res) => {
       JOIN requests r ON r.ThesisID=t.ThesisID AND r.ReqStatus='ACCEPTED'
       WHERE r.ProfessorID=? AND t.Status='FINISHED'
     `;
-
-    // Μέσος τελικός βαθμός ανά διπλωματική (avg grades per thesis) και μετά μέσος όρος αυτών
     const qSupMeanGrade = `
       SELECT AVG(x.thesis_avg) AS meanFinalGrade
       FROM (
@@ -1129,6 +1105,89 @@ app.get("/professor/stats", auth, requireProfessor, async (req, res) => {
     res.status(500).json({ message: "Σφάλμα υπολογισμού στατιστικών." });
   }
 });
+
+// ACTIVE -> UNDER-EXAMINATION (μόνο ο επιβλέπων)
+app.put("/thesis/:id/mark-under-examination", auth, requireProfessor, (req, res) => {
+  const thesisId = Number(req.params.id);
+  const me = req.user.UserID;
+
+  const q = `SELECT ThesisID, ProfessorID, Status FROM thesis WHERE ThesisID=? LIMIT 1`;
+  db.query(q, [thesisId], (err, rows) => {
+    if (err) return res.status(500).send(err);
+    if (!rows.length) return res.status(404).json({ message: "Δεν βρέθηκε διπλωματική." });
+
+    const t = rows[0];
+    if (t.ProfessorID !== me) return res.status(403).json({ message: "Μόνο ο επιβλέπων μπορεί να αλλάξει την κατάσταση." });
+    if (t.Status !== 'ACTIVE') return res.status(409).json({ message: "Η μετάβαση επιτρέπεται μόνο από ACTIVE σε UNDER-EXAMINATION." });
+
+    db.query(`UPDATE thesis SET Status='UNDER-EXAMINATION' WHERE ThesisID=?`, [thesisId], (e2) => {
+      if (e2) return res.status(500).send(e2);
+      res.json({ message: "Η διπλωματική πέρασε σε UNDER-EXAMINATION." });
+    });
+  });
+});
+
+// Οι σημειώσεις ΜΟΝΟ του συνδεδεμένου διδάσκοντα για τη συγκεκριμένη ΔΕ
+app.get("/thesis/:id/notes", auth, requireProfessor, (req, res) => {
+  const thesisId = Number(req.params.id);
+  const me = req.user.UserID;
+
+  // Επιτρέπεται σε επιβλέποντα Ή σε μέλος τριμελούς (ACCEPTED), και μόνο αν είναι ACTIVE
+  const qAuth = `
+    SELECT t.ThesisID
+    FROM thesis t
+    LEFT JOIN requests r ON r.ThesisID=t.ThesisID AND r.ProfessorID=? AND r.ReqStatus='ACCEPTED'
+    WHERE t.ThesisID=? AND t.Status='ACTIVE' AND (t.ProfessorID=? OR r.ReqID IS NOT NULL)
+    LIMIT 1
+  `;
+  db.query(qAuth, [me, thesisId, me], (err, rows) => {
+    if (err) return res.status(500).send(err);
+    if (!rows.length) return res.status(403).json({ message: "Δεν έχετε πρόσβαση ή η ΔΕ δεν είναι ACTIVE." });
+
+    const qNotes = `
+      SELECT NoteID, Body, CreatedAt
+      FROM thesis_notes
+      WHERE ThesisID=? AND ProfessorID=?
+      ORDER BY NoteID DESC
+    `;
+    db.query(qNotes, [thesisId, me], (e2, notes) => {
+      if (e2) return res.status(500).send(e2);
+      res.json(notes);
+    });
+  });
+});
+
+// Καταχώριση νέας σημείωσης (έως 300 χαρακτήρες)
+app.post("/thesis/:id/notes", auth, requireProfessor, (req, res) => {
+  const thesisId = Number(req.params.id);
+  const me = req.user.UserID;
+  const text = String(req.body.text || "").trim();
+
+  if (!text) return res.status(400).json({ message: "Κείμενο σημείωσης απαιτείται." });
+  if (text.length > 300) return res.status(413).json({ message: "Μέγιστο μήκος 300 χαρακτήρες." });
+
+  const qAuth = `
+    SELECT t.ThesisID
+    FROM thesis t
+    LEFT JOIN requests r ON r.ThesisID=t.ThesisID AND r.ProfessorID=? AND r.ReqStatus='ACCEPTED'
+    WHERE t.ThesisID=? AND t.Status='ACTIVE' AND (t.ProfessorID=? OR r.ReqID IS NOT NULL)
+    LIMIT 1
+  `;
+  db.query(qAuth, [me, thesisId, me], (err, rows) => {
+    if (err) return res.status(500).send(err);
+    if (!rows.length) return res.status(403).json({ message: "Δεν έχετε πρόσβαση ή η ΔΕ δεν είναι ACTIVE." });
+
+    db.query(
+      `INSERT INTO thesis_notes (ThesisID, ProfessorID, Body) VALUES (?, ?, ?)`,
+      [thesisId, me, text],
+      (e2, result) => {
+        if (e2) return res.status(500).send(e2);
+        res.status(201).json({ NoteID: result.insertId, Body: text, CreatedAt: new Date().toISOString().slice(0,19).replace('T',' ') });
+      }
+    );
+  });
+});
+
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

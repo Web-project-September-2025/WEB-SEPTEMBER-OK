@@ -7,13 +7,10 @@
   <link rel="stylesheet" href="styles/main.css" />
 
   <style>
-    /* === BACKGROUND ΕΙΚΟΝΑ ΣΕ ΟΛΗ ΤΗ ΣΕΛΙΔΑ === */
     html, body { height: 100%; }
     body.prof-theses{
       background: url('images/student.png') center center / cover no-repeat fixed;
-      /* αν δεν θες parallax, βγάλε το 'fixed' */
     }
-    /* προαιρετικό σκοτείνιασμα για καλύτερη αναγνωσιμότητα */
     body.prof-theses::before{
       content:"";
       position: fixed; inset: 0;
@@ -21,23 +18,19 @@
       z-index: 0;
     }
 
-    /* Δυναμικό κενό κάτω από τη λευκή γραμμή */
     :root { --below-line-offset: 260px; }
 
-    /* Logo + γραμμή σταθερά ψηλά, πάνω από το περιεχόμενο */
     .overlay-logo { position: fixed; top: 10px; left: 40px; z-index: 5; }
     .overlay-logo .top-line { margin-top: 8px; position: relative; z-index: 1; }
 
-    /* Τίτλος επάνω δεξιά */
     .top-right-title { position: fixed; top: 10px; right: 40px; z-index: 5; }
 
-    /* Το κύριο πλαίσιο κάτω από τη γραμμή, πάνω από το overlay */
     .prof-theses .page {
       max-width: 1200px;
       margin: var(--below-line-offset) auto 40px;
       padding: 0 16px;
       position: relative;
-      z-index: 2; /* πάνω από το σκοτείνιασμα */
+      z-index: 2;
     }
 
     .prof-theses .card {
@@ -69,6 +62,31 @@
     .detail { margin-top: 16px; }
     .timeline li { margin: 6px 0; }
     .actions-row { display:flex; gap:10px; flex-wrap: wrap; margin-top: 8px; }
+
+    /* --- ΝΕΑ blocks --- */
+    .subcard {
+      background: rgba(255,255,255,.06);
+      border-radius: 12px;
+      padding: 12px;
+      margin-top: 12px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+    }
+    .subcard h4 { margin: 0 0 8px; }
+    #notesList { list-style: none; margin: 8px 0 0; padding: 0; }
+    #notesList li {
+      background: rgba(255,255,255,.06);
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    #noteBody { width: 100%; min-height: 64px; }
+    .row-actions { display: flex; gap: 8px; align-items: center; }
+    .help { font-size: 12px; opacity: .85; }
+    .inline-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    @media (max-width: 520px){ .inline-grid{ grid-template-columns: 1fr; } }
   </style>
 
   <script defer src="professor-theses.js"></script>
@@ -178,6 +196,58 @@
             <strong>Σύνδεσμοι:</strong>
             <div id="d_links" class="actions-row"></div>
           </div>
+
+          <!-- ================= ΝΕΑ ΤΜΗΜΑΤΑ ΚΑΤΩ ΑΠΟ "ΣΥΝΔΕΣΜΟΙ" ================= -->
+
+          <!-- (A) ΣΗΜΕΙΩΣΕΙΣ ΔΙΔΑΣΚΟΝΤΟΣ (ACTIVE μόνο, ορατές μόνο στον δημιουργό) -->
+          <div id="notesBox" class="subcard" style="display:none;">
+            <h4>Σημειώσεις (μόνο για εσάς)</h4>
+            <form id="noteForm">
+              <textarea id="noteBody" maxlength="300" placeholder="Γράψτε μια σύντομη σημείωση (έως 300 χαρακτ.)"></textarea>
+              <div class="row-actions" style="margin-top:6px;">
+                <span id="noteCount" class="help">0 / 300</span>
+                <div style="flex:1"></div>
+                <button type="submit" class="btn-small">Καταχώριση Σημείωσης</button>
+              </div>
+            </form>
+            <ul id="notesList"></ul>
+          </div>
+
+          <!-- (B) ΕΝΕΡΓΕΙΕΣ ΕΠΙΒΛΕΠΟΝΤΑ (ACTIVE μόνο) -->
+          <div id="supervisorActions" class="subcard" style="display:none;">
+            <h4>Ενέργειες Επιβλέποντα</h4>
+
+            <div class="help" id="activeSinceInfo" style="margin-bottom:8px;">—</div>
+
+            <div class="inline-grid">
+              <!-- Ακύρωση ανάθεσης μετά από 2 έτη -->
+              <div>
+                <strong>Ακύρωση Ανάθεσης</strong>
+                <div class="help">Επιτρέπεται μόνο αν έχουν παρέλθει 2 έτη από την οριστικοποίηση. Ο λόγος θα καταχωρηθεί ως «από Διδάσκοντα».</div>
+                <div style="margin-top:6px;">
+                  <label>Α.Π. ΓΣ</label>
+                  <input type="text" id="gsNumber" placeholder="π.χ. 123/Σ-45" />
+                </div>
+                <div style="margin-top:6px;">
+                  <label>Έτος ΓΣ</label>
+                  <input type="number" id="gsYear" min="2000" max="2099" step="1" />
+                </div>
+                <div style="margin-top:8px;">
+                  <button id="btnCancelActive" class="btn-small danger" disabled>Ακύρωση Διπλωματικής</button>
+                </div>
+              </div>
+
+              <!-- Μετάβαση σε Υπό Εξέταση -->
+              <div>
+                <strong>Αλλαγή κατάστασης σε «Υπό Εξέταση»</strong>
+                <div class="help">Χρησιμοποιήστε το όταν ο/η φοιτητής/τρια είναι έτοιμος/η για τα επόμενα βήματα.</div>
+                <div style="margin-top:8px;">
+                  <button id="btnToUnderExam" class="btn-small">Μετάβαση σε UNDER-EXAMINATION</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
