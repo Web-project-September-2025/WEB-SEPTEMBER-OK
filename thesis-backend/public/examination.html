@@ -44,46 +44,41 @@
   <button class="logout-btn" onclick="window.location.href='student-dashboard.html'">Επιστροφή</button>
 
   <script>
-    const user = JSON.parse(localStorage.getItem("user"));
-    const thesisID = localStorage.getItem("activeThesisID"); 
+  // Παίρνω το thesis id από το query string
+  const params = new URLSearchParams(window.location.search);
+  const thesisID = params.get("id");
 
-    document.getElementById("examForm").addEventListener("submit", async function (e) {
-      e.preventDefault();
+  document.getElementById("examForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
 
-      const file = document.getElementById("file").files[0];
-      const link = document.getElementById("link").value;
-      const date = document.getElementById("date").value;
-      const method = document.getElementById("method").value;
-      const location = document.getElementById("location").value;
+    const file = document.getElementById("file").files[0];
+    const link = document.getElementById("link").value;
+    const date = document.getElementById("date").value;         // YYYY-MM-DDTHH:mm
+    const method = document.getElementById("method").value;     // IN-PERSON | ONLINE
+    const location = document.getElementById("location").value;
 
-      // 1. Ανέβασε αρχείο 
-
-      fetch("http://localhost:3000/examination", {
+    try {
+      const res = await fetch("http://localhost:3000/examination", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ThesisID: thesisID,
-          FileURL: file.name,
-          LinkURL: link,
+          FileURL: file ? file.name : null,
+          LinkURL: link || null,
           ExamDate: date,
           ExamMethod: method,
           Location: location,
         }),
-      })
-        .then((res) => {
-          if (!res.ok) throw new Error("Αποτυχία αποθήκευσης!");
-          return res.json();
-        })
-        .then(() => {
-          alert("✅ Τα στοιχεία καταχωρήθηκαν!");
-          window.location.href = "student-dashboard.html";
-        })
-        .catch((err) => {
-          alert("⛔ Σφάλμα: " + err.message);
-        });
-    });
-  </script>
+      });
+      if (!res.ok) throw new Error("Αποτυχία αποθήκευσης!");
+      await res.json();
+      alert("✅ Τα στοιχεία καταχωρήθηκαν!");
+      window.location.href = "student-dashboard.html";
+    } catch (err) {
+      alert("⛔ Σφάλμα: " + err.message);
+    }
+  });
+</script>
+
 </body>
 </html>

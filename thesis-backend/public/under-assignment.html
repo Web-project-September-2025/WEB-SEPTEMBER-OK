@@ -33,81 +33,42 @@
   <button class="logout-btn" onclick="window.location.href='student-dashboard.html'">Επιστροφή</button>
 
   <script>
-    const user = JSON.parse(localStorage.getItem("user"));
-    let thesisId = null;
+  const user = JSON.parse(localStorage.getItem("user"));
 
-    document.addEventListener("DOMContentLoaded", () => {
-      // Πάρε τη διπλωματική του φοιτητή
-      fetch(`http://localhost:3000/thesis/student/${user.UserID}`)
-        .then(res => res.json())
-        .then(data => {
-          const thesis = data.find(t => t.Status === "UNDER-ASSIGNMENT");
-          if (!thesis) {
-            alert("Δεν βρέθηκε διπλωματική σε κατάσταση 'Υπό Ανάθεση'");
-            return;
-          }
-          thesisId = thesis.ThesisID;
+  document.addEventListener("DOMContentLoaded", () => {
+    if (!user || user.Role !== "STUDENT") {
+      alert("⛔ Μη εξουσιοδοτημένη πρόσβαση");
+      window.location.href = "login.html";
+      return;
+    }
 
-          document.getElementById("thesisTitle").textContent = thesis.Title;
-          document.getElementById("thesisDescription").textContent = thesis.Description;
+    // Φέρε τη ΔΕ του φοιτητή που είναι UNDER-ASSIGNMENT (υπό ανάθεση)
+    fetch(`http://localhost:3000/thesis/student/${user.UserID}`)
+      .then(res => res.json())
+      .then(theses => {
+        const thesis = theses.find(t => t.Status === "UNDER-ASSIGNMENT");
+        if (!thesis) {
+          alert("Δεν βρέθηκε διπλωματική σε κατάσταση 'Υπό Ανάθεση'");
+          return;
+        }
 
-          loadProfessors();
-          loadRequests();
-        });
+        document.getElementById("thesisTitle").textContent = thesis.Title;
+        document.getElementById("thesisDescription").textContent = thesis.Description;
 
-      // Πρόσκληση καθηγητή
-      document.getElementById("inviteBtn").addEventListener("click", () => {
-        const professorId = document.getElementById("professorSelect").value;
-        if (!professorId) return alert("Επιλέξτε καθηγητή!");
-
-        fetch("http://localhost:3000/requests", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ThesisID: thesisId, ProfessorID: professorId })
-        })
-        .then(res => {
-          if (!res.ok) throw new Error("Αποτυχία αποστολής αίτησης");
-          return res.json();
-        })
-        .then(() => {
-          alert("Η αίτηση εστάλη");
-          loadRequests();
-        })
-        .catch(err => alert("Σφάλμα: " + err.message));
+        // Ενημέρωση χρήστη: την τριμελή την ορίζει ο επιβλέπων
+        const area = document.querySelector(".thesis-details-section");
+        const info = document.createElement("div");
+        info.className = "muted";
+        info.style.marginTop = "12px";
+        info.textContent = "Η ανάθεση τριμελούς πραγματοποιείται από τον επιβλέποντα. Θα ειδοποιηθείτε όταν ολοκληρωθεί.";
+        area.appendChild(info);
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Σφάλμα φόρτωσης.");
       });
-    });
+  });
+</script>
 
-    // Φόρτωσε καθηγητές
-    function loadProfessors() {
-      fetch("http://localhost:3000/professors")
-        .then(res => res.json())
-        .then(professors => {
-          const select = document.getElementById("professorSelect");
-          select.innerHTML = `<option value="">-- Επιλογή Καθηγητή --</option>`;
-          professors.forEach(p => {
-            const option = document.createElement("option");
-            option.value = p.UserID;
-            option.textContent = `${p.UserName} (${p.Email})`;
-            select.appendChild(option);
-          });
-        });
-    }
-
-    // Φόρτωσε αιτήσεις
-    function loadRequests() {
-      if (!thesisId) return;
-      fetch(`http://localhost:3000/requests/${thesisId}`)
-        .then(res => res.json())
-        .then(requests => {
-          const list = document.getElementById("requestsList");
-          list.innerHTML = "";
-          requests.forEach(r => {
-            const li = document.createElement("li");
-            li.textContent = `${r.UserName} - ${r.ReqStatus}`;
-            list.appendChild(li);
-          });
-        });
-    }
-  </script>
 </body>
 </html>

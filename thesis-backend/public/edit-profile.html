@@ -41,41 +41,48 @@
   <script>
   const user = JSON.parse(localStorage.getItem("user"));
 
-  // Φόρτωσε τα στοιχεία του χρήστη όταν φορτώσει η σελίδα
+  // Prefill
   fetch(`http://localhost:3000/user/${user.UserID}`)
-    .then((res) => res.json())
-    .then((data) => {
+    .then(res => res.json())
+    .then(data => {
       document.getElementById("adress").value = data.Adress || "";
       document.getElementById("email").value = data.Email || "";
       document.getElementById("phone").value = data.Phone || "";
     });
 
-  // Όταν πατάς αποθήκευση
-  document.getElementById("profileForm").addEventListener("submit", function (e) {
+  document.getElementById("profileForm").addEventListener("submit", async function (e) {
     e.preventDefault();
 
     const Adress = document.getElementById("adress").value;
-    const Email = document.getElementById("email").value;
-    const Phone = document.getElementById("phone").value;
+    const Email  = document.getElementById("email").value;
+    const Phone  = document.getElementById("phone").value;
 
-    fetch(`http://localhost:3000/user/${user.UserID}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ Adress, Email, Phone }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        alert("✅ Τα στοιχεία αποθηκεύτηκαν επιτυχώς.");
-        // Αν θες, επέστρεψε στο dashboard:
-        // window.location.href = "student-dashboard.html";
-      })
-      .catch((err) => {
-        alert("⛔ Σφάλμα αποθήκευσης: " + err.message);
+    try {
+      const res = await fetch(`http://localhost:3000/user/${user.UserID}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ Adress, Email, Phone }),
       });
+
+      // προσπαθούμε να διαβάσουμε JSON, αλλιώς πέφτουμε σε text
+      const text = await res.text();
+      let data;
+      try { data = text ? JSON.parse(text) : {}; } catch { data = { message: text }; }
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Αποτυχία αποθήκευσης.");
+      }
+
+      alert("✅ Τα στοιχεία αποθηκεύτηκαν επιτυχώς.");
+      // Αν θέλεις, ενημέρωσε και το αποθηκευμένο user email για συνέπεια:
+      const updated = { ...user, Email: data.Email };
+      localStorage.setItem("user", JSON.stringify(updated));
+    } catch (err) {
+      alert("⛔ Σφάλμα αποθήκευσης: " + err.message);
+    }
   });
 </script>
+
 
 </body>
 </html>

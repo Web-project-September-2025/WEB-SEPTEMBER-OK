@@ -1188,6 +1188,154 @@ app.post("/thesis/:id/notes", auth, requireProfessor, (req, res) => {
   });
 });
 
+// ================== STUDENT ENDPOINTS ==================
+
+// Λίστα διπλωματικών του φοιτητή
+app.get("/thesis/student/:id", (req, res) => {
+  const studentId = Number(req.params.id);
+  const sql = `
+    SELECT t.ThesisID, t.Title, t.Description, t.Status, t.StartDate, t.EndDate,
+           t.Progress, t.RepositoryLink, t.PdfPath,
+           p.UserName AS ProfessorName
+    FROM thesis t
+    LEFT JOIN users p ON p.UserID = t.ProfessorID
+    WHERE t.StudentID = ?
+    ORDER BY t.ThesisID DESC
+  `;
+  db.query(sql, [studentId], (err, rows) => {
+    if (err) return res.status(500).send(err);
+    res.json(rows);
+  });
+});
+
+// Βασικά στοιχεία χρήστη (για το box προφίλ)
+app.get("/user/:id", (req, res) => {
+  const userId = Number(req.params.id);
+  const sql = `
+    SELECT UserID, UserName, Adress, Phone, Email, Role, AM
+    FROM users
+    WHERE UserID = ?
+    LIMIT 1
+  `;
+  db.query(sql, [userId], (err, rows) => {
+    if (err) return res.status(500).send(err);
+    if (!rows.length) return res.status(404).json({ message: "User not found" });
+    res.json(rows[0]);
+  });
+});
+
+// Helper: πάρε υπάρχουσα εξέταση για ThesisID ή δημιούργησε μία
+function getOrCreateExam(thesisId, { examDate, method, location }, cb) {
+  db.query(`SELECT * FROM exam WHERE ThesisID=? LIMIT 1`, [thesisId], (e1, rows) => {
+    if (e1) return cb(e1);
+    if (rows.length) return cb(null, rows[0]);
+
+    // Αν δεν υπάρχει, φτιάξε μία (χρειάζεται ExamDate NOT NULL)
+    const dateToUse = examDate || new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const methodToUse = method || 'IN-PERSON';
+    const locToUse = location || 'unknown';
+    const ins = `
+      INSERT INTO exam (ThesisID, ExamDate, ExamMethod, Location, ExamGrade)
+      VALUES (?, ?, ?, ?, NULL)
+    `;
+    db.query(ins, [thesisId, dateToUse, methodToUse, locToUse], (e2, r) => {
+      if (e2) return cb(e2);
+      db.query(`SELECT * FROM exam WHERE ExamID=?`, [r.insertId], (e3, r2) => {
+        if (e3) return cb(e3);
+        cb(null, r2[0]);
+      });
+    });
+  });
+}
+
+// Καταχώριση στοιχείων "Υπό Εξέταση" από φοιτητή
+// (σώζει submission + ενημερώνει/δημιουργεί εγγραφή exam)
+// ΔΕΝ αλλάζει status — αυτό το κάνει ο επιβλέπων από το δικό του UI.
+app.post("/examination", (req, res) => {
+  const {
+    ThesisID,
+    FileURL,     // π.χ. όνομα αρχείου — προς το παρόν δεν ανεβάζουμε binary
+    LinkURL,
+    ExamDate,    // "YYYY-MM-DDTHH:mm" από <input type=datetime-local>
+    ExamMethod,  // 'IN-PERSON' | 'ONLINE'
+    Location
+  } = req.body;
+
+  const thesisId = Number(ThesisID);
+  if (!thesisId) return res.status(400).json({ message: "Λείπει ThesisID" });
+  if (!ExamDate || !ExamMethod || !Location) {
+    return res.status(400).json({ message: "ExamDate, ExamMethod και Location είναι υποχρεωτικά." });
+  }
+
+  // 1) Submission (πρόχειρο κείμενο/σύνδεσμος)
+  const insSub = `
+    INSERT INTO submissions (ThesisID, FileURL, LinkURL, DateUploaded)
+    VALUES (?, ?, ?, NOW())
+  `;
+  db.query(insSub, [thesisId, FileURL || 'unknown', LinkURL || 'unknown'], (e1) => {
+    if (e1) return res.status(500).send(e1);
+
+    // 2) Exam (upsert χωρίς UNIQUE constraint)
+    getOrCreateExam(
+      thesisId,
+      { examDate: ExamDate.slice(0,10), method: ExamMethod, location: Location },
+      (e2, examRow) => {
+        if (e2) return res.status(500).send(e2);
+
+        db.query(
+          `UPDATE exam SET ExamDate=?, ExamMethod=?, Location=? WHERE ExamID=?`,
+          [ExamDate.slice(0,10), ExamMethod, Location, examRow.ExamID],
+          (e3) => {
+            if (e3) return res.status(500).send(e3);
+            return res.json({ message: "OK" });
+          }
+        );
+      }
+    );
+  });
+});
+
+// Ενημέρωση προφίλ χρήστη (διεύθυνση, email, τηλέφωνο)
+app.put("/user/:id", (req, res) => {
+  const userId = Number(req.params.id);
+  let { Adress = "unknown", Email = "", Phone = null } = req.body;
+
+  Adress = String(Adress || "unknown").trim();
+  Email  = String(Email || "").trim();
+  Phone  = Phone != null ? String(Phone).trim() : null;
+
+  if (!Email) {
+    return res.status(400).json({ message: "Το email είναι υποχρεωτικό." });
+  }
+
+  const sql = `
+    UPDATE users
+    SET Adress = ?, Email = ?, Phone = ?
+    WHERE UserID = ?
+    LIMIT 1
+  `;
+  db.query(sql, [Adress, Email, Phone, userId], (err) => {
+    if (err) {
+      // μοναδικότητα email
+      if (err.code === "ER_DUP_ENTRY") {
+        return res.status(409).json({ message: "Το email χρησιμοποιείται ήδη από άλλον χρήστη." });
+      }
+      return res.status(500).json({ message: "Σφάλμα βάσης.", detail: err });
+    }
+
+    // επιστρέφουμε τα ενημερωμένα στοιχεία ως JSON
+    db.query(
+      `SELECT UserID, UserName, Role, Adress, Phone, Email, AM
+       FROM users WHERE UserID = ? LIMIT 1`,
+      [userId],
+      (e2, rows) => {
+        if (e2) return res.status(500).json({ message: "Σφάλμα ανάγνωσης." });
+        if (!rows.length) return res.status(404).json({ message: "Ο χρήστης δεν βρέθηκε." });
+        res.json(rows[0]);
+      }
+    );
+  });
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
