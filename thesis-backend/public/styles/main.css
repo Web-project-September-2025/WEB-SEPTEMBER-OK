@@ -942,13 +942,10 @@ main.dashboard tbody td:last-child{
   }
 }
 
-/* ---------- table badge for status (προαιρετικό χρωματάκι) ---------- */
 td[data-label="Κατάσταση"], td:nth-child(4){
   font-weight:700;
 }
-td[data-label="Κατάσταση"]::after, td:nth-child(4)::after{
-  /* μικρό οπτικό διαχωριστικό – προαιρετικό */
-}
+
 
 /* ---------- modal (details) ---------- */
 .modal.hidden{ display:none; }
