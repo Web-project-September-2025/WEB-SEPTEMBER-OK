@@ -41,7 +41,7 @@ async function fetchProfessorAssignable() {
   return res.json();
 }
 
-// Όλα του καθηγητή (για να φιλτράρουμε PROVISIONAL για τον φοιτητή)
+// Όλα του καθηγητή 
 async function fetchAllProfessorTheses() {
   const res = await fetch(`${API_BASE}/professor/topics`, {
     headers: { ...authHeader() }
@@ -55,7 +55,7 @@ function showAssignPanels() {
   assignWrap.style.display = 'block';
 }
 
-// ---- Αναζήτηση & επιλογή φοιτητή ----
+// Αναζήτηση & επιλογή φοιτητή 
 searchStudentForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const q = searchInput.value.trim();
@@ -118,13 +118,11 @@ searchStudentForm.addEventListener('submit', async (e) => {
   }
 });
 
-// ---- Panels ----
+// Panels 
 async function loadPanels() {
-  // Αριστερά: διαθέσιμα (UNDER-ASSIGNMENT χωρίς student)
   topics = await fetchProfessorAssignable();
   renderAvailable();
 
-  // Δεξιά: προσωρινά (PROVISIONAL) του συγκεκριμένου φοιτητή
   const all = await fetchAllProfessorTheses();
   renderProvisional(all);
 }
@@ -140,7 +138,7 @@ function renderAvailable() {
   topics.forEach(t => {
     const div = document.createElement('div');
     div.className = 'topic-item';
-    // ΜΟΝΟ ΤΙΤΛΟΣ (όχι περιγραφή)
+
     div.innerHTML = `
       <strong>${t.Title}</strong>
       <div class="btn-row">
@@ -250,7 +248,7 @@ function renderProvisional(allTheses) {
   };
 }
 
-// ---- Modal confirm ----
+// Modal confirm 
 function confirmModal(message) {
   return new Promise(resolve => {
     const modal = document.getElementById('confirmModal');
