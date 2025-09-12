@@ -58,7 +58,6 @@ function renderThesisSelect() {
   currentThesisId = theses[0].ThesisID;
   thesisSelect.value = String(currentThesisId);
   thesisInfo.textContent = infoLine(theses[0]);
-  // load invites for first
   loadInvites();
 }
 
@@ -81,14 +80,12 @@ async function loadPage() {
 }
 loadPage();
 
-// ---------- helpers ----------
+// helpers
 function fmt(dt){
   if (!dt) return '—';
-  // αναμένεται "YYYY-MM-DD HH:MM:SS" λόγω dateStrings:true
   const s = String(dt).replace('T', ' ');
-  return s.slice(0, 16); // YYYY-MM-DD HH:MM
+  return s.slice(0, 16); 
 }
-// -----------------------------
 
 async function loadInvites() {
   invitesWrap.innerHTML = 'Φόρτωση...';
@@ -224,7 +221,7 @@ async function runSearch() {
         const d = await res.json().catch(()=>({}));
         if (!res.ok) { alert(d.message || 'Αποτυχία.'); return; }
         await loadInvites();
-        await runSearch(); // κρύψε αυτόν από τα διαθέσιμα
+        await runSearch(); 
         alert(d.message || 'OK');
       } catch {
         alert('Σφάλμα επικοινωνίας.');

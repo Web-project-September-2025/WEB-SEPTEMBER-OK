@@ -51,7 +51,6 @@ let timeChart, gradeChart, countChart;
 function renderCharts(s){
   const labels = ['Επιβλέπων', 'Τριμελής'];
 
-  // Old destroy for dynamic refresh
   [timeChart, gradeChart, countChart].forEach(ch => ch && ch.destroy && ch.destroy());
 
   timeChart = new Chart(timeCtx, {

@@ -40,7 +40,7 @@ editForm.addEventListener('submit', (e) => {
 
   fetch(`${API_BASE}/professor/topics/${thesisId}`, {
     method: 'PUT',
-    headers: { ...authHeader() }, // ΜΗΝ βάλεις Content-Type για multipart
+    headers: { ...authHeader() }, 
     body: formData
   })
   .then(res => {
@@ -49,7 +49,6 @@ editForm.addEventListener('submit', (e) => {
   })
   .then(() => {
     alert('✅ Αποθηκεύτηκε!');
-    // καθάρισε το κλειδί για να μην μείνει stale
     localStorage.removeItem('editTopicId');
     window.location.href = 'topics-management.html';
   })

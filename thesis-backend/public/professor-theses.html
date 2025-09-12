@@ -63,7 +63,7 @@
     .timeline li { margin: 6px 0; }
     .actions-row { display:flex; gap:10px; flex-wrap: wrap; margin-top: 8px; }
 
-    /* --- ΝΕΑ blocks --- */
+    /* ΝΕΑ blocks */
     .subcard {
       background: rgba(255,255,255,.06);
       border-radius: 12px;
@@ -91,7 +91,6 @@
 
   <script defer src="professor-theses.js"></script>
 
-  <!-- Υπολογισμός δυναμικού κενού κάτω από τη γραμμή -->
   <script>
     function setBelowLineOffset(){
       const line = document.querySelector('.top-line');
@@ -197,9 +196,9 @@
             <div id="d_links" class="actions-row"></div>
           </div>
 
-          <!-- ================= ΝΕΑ ΤΜΗΜΑΤΑ ΚΑΤΩ ΑΠΟ "ΣΥΝΔΕΣΜΟΙ" ================= -->
+          <!-- ΝΕΑ ΤΜΗΜΑΤΑ ΚΑΤΩ ΑΠΟ "ΣΥΝΔΕΣΜΟΙ" -->
 
-          <!-- (A) ΣΗΜΕΙΩΣΕΙΣ ΔΙΔΑΣΚΟΝΤΟΣ (ACTIVE μόνο, ορατές μόνο στον δημιουργό) -->
+          <!-- (A) ΣΗΜΕΙΩΣΕΙΣ ΔΙΔΑΣΚΟΝΤΟΣ (ACTIVE μόνο ορατές στον δημιουργό) -->
           <div id="notesBox" class="subcard" style="display:none;">
             <h4>Σημειώσεις (μόνο για εσάς)</h4>
             <form id="noteForm">

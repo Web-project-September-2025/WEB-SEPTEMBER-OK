@@ -1,8 +1,7 @@
 // professor-theses.js
-// ------------------------------------------------------------
 const API_BASE = 'http://localhost:3000';
 
-// --- auth helpers ---
+// auth helpers 
 function authHeader() {
   const token = localStorage.getItem('authToken');
   return token ? { Authorization: 'Bearer ' + token } : {};
@@ -19,7 +18,7 @@ ensureProfessor();
 
 const me = JSON.parse(localStorage.getItem('user') || 'null');
 
-// --- top filters / table ---
+// top filters / table 
 const roleSel     = document.getElementById('role');
 const statusesSel = document.getElementById('statuses');
 const qInput      = document.getElementById('q');
@@ -27,7 +26,7 @@ const tbody       = document.getElementById('tbody');
 const table       = document.getElementById('table');
 const countWrap   = document.getElementById('countWrap');
 
-// --- detail pane ---
+// detail panel
 const detailBox   = document.getElementById('detail');
 const d_title     = document.getElementById('d_title');
 const d_prof      = document.getElementById('d_prof');
@@ -37,7 +36,7 @@ const d_timeline  = document.getElementById('d_timeline');
 const d_grade     = document.getElementById('d_grade');
 const d_links     = document.getElementById('d_links');
 
-// --- supervisor actions (match HTML ids) ---
+// supervisor actions (match HTML ids)
 const actionsBox      = document.getElementById('supervisorActions');
 const activeSinceInfo = document.getElementById('activeSinceInfo');
 const btnToUnderExam  = document.getElementById('btnToUnderExam');
@@ -45,21 +44,20 @@ const btnCancelActive = document.getElementById('btnCancelActive');
 const gsNumberInput   = document.getElementById('gsNumber');
 const gsYearInput     = document.getElementById('gsYear'); // πληροφοριακά μόνο
 
-// --- notes block (match HTML ids) ---
+// notes block (match HTML ids) 
 const notesBox  = document.getElementById('notesBox');
 const noteForm  = document.getElementById('noteForm');
 const noteBody  = document.getElementById('noteBody');
 const noteCount = document.getElementById('noteCount');
 const notesList = document.getElementById('notesList');
 
-// --- events on filters / exports ---
+// events on filters / exports
 document.getElementById('searchBtn').addEventListener('click', loadList);
 document.getElementById('exportCsvBtn').addEventListener('click', () => exportList('csv'));
 document.getElementById('exportJsonBtn').addEventListener('click', () => exportList('json'));
 
 window.addEventListener('DOMContentLoaded', loadList);
 
-// ------------------------------------------------------------
 
 function getSelectedStatuses() {
   return Array.from(statusesSel.selectedOptions).map(o => o.value);
@@ -121,7 +119,7 @@ async function loadDetails(id) {
     const res = await fetch(`${API_BASE}/thesis/${id}/full`, {
       headers: { ...authHeader() }
     });
-    const text = await res.text(); // για καλύτερο debug
+    const text = await res.text(); 
     if (!res.ok) {
       console.error('Load details failed:', text);
       alert('Σφάλμα φόρτωσης λεπτομερειών');
@@ -186,11 +184,11 @@ function fillDetails({ thesis, committee, timeline, finalGrade, latestSubmission
     d_links.appendChild(span);
   }
 
-  // === Ενέργειες & Σημειώσεις μόνο σε ACTIVE ===
+  // Ενέργειες & Σημειώσεις μόνο σε ACTIVE 
   const isSupervisor = Number(me?.UserID) === Number(thesis.ProfessorID);
 
   if (thesis.Status === 'ACTIVE') {
-    // ---- Ενέργειες επιβλέποντα ----
+    // Ενέργειες επιβλέποντα 
     if (isSupervisor) {
       actionsBox.style.display = 'block';
 
@@ -265,7 +263,7 @@ function fillDetails({ thesis, committee, timeline, finalGrade, latestSubmission
       actionsBox.style.display = 'none';
     }
 
-    // ---- Σημειώσεις (ορατές μόνο στον δημιουργό τους) ----
+    // Σημειώσεις (ορατές μόνο στον δημιουργό τους) 
     notesBox.style.display = 'block';
 
     // live counter
@@ -344,7 +342,6 @@ function exportList(format) {
   window.open(url, '_blank');
 }
 
-// ------------------------------------------------------------
 // helpers
 function escapeHtml(s) {
   return String(s || '').replace(/[&<>"']/g, ch => ({

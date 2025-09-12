@@ -64,7 +64,6 @@ function renderTopics(topics) {
   });
 }
 
-// Event delegation για τα δυναμικά κουμπιά
 topicsList.addEventListener('click', (e) => {
   const editBtn = e.target.closest('.editBtn');
   if (editBtn) {
@@ -96,11 +95,11 @@ topicsList.addEventListener('click', (e) => {
 // Προσθήκη νέου θέματος
 addTopicForm.addEventListener('submit', (event) => {
   event.preventDefault();
-  const formData = new FormData(addTopicForm); // title, summary, pdfFile
+  const formData = new FormData(addTopicForm); 
 
   fetch(`${API_BASE}/professor/topics`, {
     method: 'POST',
-    headers: { ...authHeader() }, // ΜΗΝ ορίσεις Content-Type για multipart
+    headers: { ...authHeader() }, 
     body: formData
   })
   .then(res => {
