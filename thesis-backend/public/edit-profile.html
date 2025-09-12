@@ -74,7 +74,6 @@
       }
 
       alert("✅ Τα στοιχεία αποθηκεύτηκαν επιτυχώς.");
-      // Αν θέλεις, ενημέρωσε και το αποθηκευμένο user email για συνέπεια:
       const updated = { ...user, Email: data.Email };
       localStorage.setItem("user", JSON.stringify(updated));
     } catch (err) {

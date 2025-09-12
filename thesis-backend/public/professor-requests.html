@@ -8,7 +8,7 @@
 
   <style>
     :root { --below-line-offset: 260px; }
-    /* background εικόνα σε όλη τη σελίδα */
+    /* background εικόνα σε όλη τη σελίδα  */
     body::before{
       content:"";
       position:fixed; inset:0;
@@ -41,7 +41,6 @@
   </style>
 
   <script>
-    // Δυναμικό offset κάτω από τη γραμμή
     function setBelowLineOffset(){
       const line = document.querySelector('.top-line');
       if(!line) return;
