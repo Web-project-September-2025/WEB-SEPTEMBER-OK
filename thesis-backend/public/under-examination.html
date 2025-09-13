@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Εξέταση Διπλωματικής</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body class="student-dashboard">
+
+<!--   <!-- Logo & γραμμή 
+  <div class="overlay-logo">
+    <img src="images/logo.png" alt="logo" class="logo" />
+    <div class="top-line"></div>
+  </div> -->
+
+  <!-- Τίτλος -->
+  <div class="top-right-title">
+    <h2>Εξέταση Διπλωματικής</h2>
+  </div>
+
+  <div class="thesis-details-box">
+    <h3 id="thesisTitle"></h3>
+    <p><strong>Περιγραφή:</strong> <span id="thesisDescription"></span></p>
+    <p><strong>Διδάσκων:</strong> <span id="thesisProfessor"></span></p>
+    <p><strong>Ημερομηνία Εξέτασης:</strong> <span id="examDate"></span></p>
+    <p><strong>Τρόπος:</strong> <span id="examMethod"></span></p>
+    <p><strong>Τοποθεσία:</strong> <span id="examLocation"></span></p>
+    <p><a id="submissionLink" href="#" target="_blank">📄 Δες το αρχείο του φοιτητή</a></p>
+  </div>
+
+  <!-- Καταχώρηση Βαθμού -->
+  <div class="thesis-details-box">
+    <h3>Καταχώρηση Βαθμού</h3>
+    <form id="gradeForm">
+      <label for="grade">Βαθμός (0–10):</label>
+      <input type="number" id="grade" name="grade" step="0.1" min="0" max="10" required>
+      <button type="submit" class="btn-small">Αποθήκευση Βαθμού</button>
+    </form>
+  </div>
+
+  <!-- Βαθμοί άλλων μελών -->
+  <div class="thesis-details-box">
+    <h3>Βαθμοί μελών τριμελούς</h3>
+    <div id="gradesList">Δεν υπάρχουν καταχωρημένοι βαθμοί ακόμα.</div>
+  </div>
+
+  <!-- Ανακοίνωση -->
+  <div class="thesis-details-box" id="announcementBox" style="display:none;">
+    <h3>Ανακοίνωση Παρουσίασης</h3>
+    <button id="generateAnnBtn" class="btn-small">Παραγωγή Ανακοίνωσης</button>
+    <pre id="announcementText"></pre>
+  </div>
+
+  <!-- Επιστροφή -->
+  <button class="logout-btn" onclick="window.history.back()">⬅ Επιστροφή</button>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const params = new URLSearchParams(window.location.search);
+      const thesisId = params.get("id");
+      const user = JSON.parse(localStorage.getItem("user"));
+
+      // Φέρε στοιχεία διπλωματικής + εξέτασης
+      fetch(`http://localhost:3000/thesis/${thesisId}`)
+        .then(res => res.json())
+        .then(thesis => {
+          document.getElementById("thesisTitle").textContent = thesis.Title;
+          document.getElementById("thesisDescription").textContent = thesis.Description;
+          document.getElementById("thesisProfessor").textContent = thesis.ProfessorName || "—";
+          document.getElementById("examDate").textContent = thesis.ExamDate || "-";
+          document.getElementById("examMethod").textContent = thesis.ExamMethod || "-";
+          document.getElementById("examLocation").textContent = thesis.Location || "-";
+          document.getElementById("submissionLink").href = thesis.FileURL || "#";
+
+          // Αν ο χρήστης είναι ο επιβλέπων, δείξε το κουμπί ανακοίνωσης
+          if (user.UserID === thesis.ProfessorID) {
+            document.getElementById("announcementBox").style.display = "block";
+          }
+        });
+
+      // Φέρε τους βαθμούς
+      fetch(`http://localhost:3000/exam/${thesisId}/grades`)
+        .then(res => res.json())
+        .then(grades => {
+          const list = document.getElementById("gradesList");
+          list.innerHTML = "";
+          grades.forEach(g => {
+            const p = document.createElement("p");
+            p.textContent = `${g.ProfessorName}: ${g.Grade}`;
+            list.appendChild(p);
+          });
+        });
+
+      // Αποθήκευση βαθμού
+      document.getElementById("gradeForm").addEventListener("submit", e => {
+        e.preventDefault();
+        const grade = document.getElementById("grade").value;
+
+        fetch(`http://localhost:3000/exam/${thesisId}/grade`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ professorId: user.UserID, grade })
+        })
+          .then(res => res.json())
+          .then(() => {
+            alert("✅ Ο βαθμός καταχωρήθηκε!");
+            window.location.reload();
+          })
+          .catch(err => alert("⛔ Σφάλμα: " + err.message));
+      });
+
+      // Παραγωγή ανακοίνωσης
+      document.getElementById("generateAnnBtn").addEventListener("click", () => {
+        fetch(`http://localhost:3000/exam/${thesisId}/announcement`)
+          .then(res => res.json())
+          .then(data => {
+            document.getElementById("announcementText").textContent = data.announcement;
+          });
+      });
+    });
+  </script>
+
+</body>
+</html>
