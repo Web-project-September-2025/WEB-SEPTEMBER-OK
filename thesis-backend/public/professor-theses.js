@@ -345,12 +345,9 @@ function exportList(format) {
   window.open(url, '_blank');
 }
 
-// ---------------- ΥΠΟ ΕΞΕΤΑΣΗ ----------------
-
-// Φέρε στοιχεία εξέτασης + τελευταίο αρχείο υποβολής
+// Φέρε λεπτομέρειες εξέτασης
 app.get("/exam/:thesisId", (req, res) => {
   const thesisId = req.params.thesisId;
-
   const sql = `
     SELECT t.ThesisID, t.Title, t.Description, t.Status,
            e.ExamDate, e.ExamMethod, e.Location,
@@ -364,14 +361,29 @@ app.get("/exam/:thesisId", (req, res) => {
     ORDER BY s.DateUploaded DESC
     LIMIT 1
   `;
-
   db.query(sql, [thesisId], (err, results) => {
     if (err) return res.status(500).send(err);
     res.json(results[0] || {});
   });
 });
 
-// Καταχώρηση βαθμού (μέλος τριμελούς ή επιβλέπων)
+// Φέρε βαθμούς
+app.get("/exam/:thesisId/grades", (req, res) => {
+  const thesisId = req.params.thesisId;
+  const sql = `
+    SELECT g.GradeID, g.Grade, u.UserName AS Professor
+    FROM grade g
+    JOIN exam e ON g.ExamID = e.ExamID
+    JOIN users u ON g.ProfessorID = u.UserID
+    WHERE e.ThesisID = ?
+  `;
+  db.query(sql, [thesisId], (err, results) => {
+    if (err) return res.status(500).send(err);
+    res.json(results);
+  });
+});
+
+// Καταχώρηση βαθμού
 app.post("/exam/:thesisId/grade", (req, res) => {
   const { ProfessorID, Grade } = req.body;
   const thesisId = req.params.thesisId;
@@ -390,32 +402,12 @@ app.post("/exam/:thesisId/grade", (req, res) => {
   });
 });
 
-// Φέρε όλους τους βαθμούς μιας διπλωματικής
-app.get("/exam/:thesisId/grades", (req, res) => {
-  const thesisId = req.params.thesisId;
-
-  const sql = `
-    SELECT g.GradeID, g.Grade, u.UserName AS Professor
-    FROM grade g
-    JOIN exam e ON g.ExamID = e.ExamID
-    JOIN users u ON g.ProfessorID = u.UserID
-    WHERE e.ThesisID = ?
-  `;
-
-  db.query(sql, [thesisId], (err, results) => {
-    if (err) return res.status(500).send(err);
-    res.json(results);
-  });
-});
-
-// Παράγεται ανακοίνωση (μόνο επιβλέπων)
+// Ανακοίνωση (μόνο για επιβλέποντα)
 app.post("/exam/:thesisId/announcement", (req, res) => {
   const { announcementText } = req.body;
-  const thesisId = req.params.thesisId;
-
-  // εδώ μπορείς να το αποθηκεύσεις σε DB αν θες
-  res.json({ message: "📢 Ανακοίνωση δημιουργήθηκε", thesisId, announcementText });
+  res.json({ message: "📢 Ανακοίνωση δημιουργήθηκε", announcementText });
 });
+
 
 
 // helpers

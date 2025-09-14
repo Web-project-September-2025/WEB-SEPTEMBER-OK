@@ -7,52 +7,43 @@
 </head>
 <body class="student-dashboard">
 
-  <!-- Logo & λευκή γραμμή -->
+  <!-- Logo & γραμμή -->
   <div class="overlay-logo">
-    <img src="images/logo.png" alt="logo" class="logo" />
+    <img src="images/logo.png" class="logo" />
     <div class="top-line"></div>
   </div>
 
-  <!-- Τίτλος πάνω δεξιά -->
-  <div class="top-right-title">
-    <h2>Υπό Εξέταση</h2>
-  </div>
+  <div class="top-right-title"><h2>Υπό Εξέταση</h2></div>
 
-  <!-- Στοιχεία διπλωματικής -->
   <div class="thesis-details-box">
     <h3 id="title"></h3>
     <p><strong>Περιγραφή:</strong> <span id="description"></span></p>
     <p><strong>Διδάσκων:</strong> <span id="professor"></span></p>
-    <p><strong>Ημερομηνία Εξέτασης:</strong> <span id="examDate"></span></p>
+    <p><strong>Ημερομηνία:</strong> <span id="examDate"></span></p>
     <p><strong>Μέθοδος:</strong> <span id="method"></span></p>
     <p><strong>Τοποθεσία:</strong> <span id="location"></span></p>
-    <p><strong>Τελευταίο Αρχείο:</strong> <a id="submissionLink" href="#" target="_blank">—</a></p>
+    <p><strong>Τελευταίο Αρχείο:</strong> <a id="submissionLink" href="#">—</a></p>
   </div>
 
-  <!-- Φόρμα βαθμολογίας -->
   <div class="thesis-details-box">
     <h3>Καταχώρηση Βαθμού</h3>
     <form id="gradeForm">
-      <label for="grade">Βαθμός:</label>
-      <input type="number" id="grade" name="grade" min="0" max="10" step="0.5" required>
+      <input type="number" id="grade" min="0" max="10" step="0.5" required>
       <button type="submit" class="btn-small">Υποβολή</button>
     </form>
   </div>
 
-  <!-- Βαθμοί άλλων μελών -->
   <div class="thesis-details-box">
     <h3>Βαθμοί Τριμελούς</h3>
     <ul id="gradesList"></ul>
   </div>
 
-  <!-- Κουμπί ανακοίνωσης (μόνο για επιβλέποντα) -->
   <div class="thesis-details-box" id="announcementBox" style="display:none;">
     <h3>Παραγωγή Ανακοίνωσης</h3>
-    <textarea id="announcementText" rows="4" cols="50"></textarea>
+    <textarea id="announcementText"></textarea>
     <button id="announceBtn" class="btn-small">Δημιουργία</button>
   </div>
 
-  <!-- Επιστροφή -->
   <button class="logout-btn" onclick="window.history.back()">Επιστροφή⬅</button>
 
 <script>
@@ -61,7 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const thesisId = params.get("id");
   const user = JSON.parse(localStorage.getItem("user"));
 
-  // 1. Φέρε λεπτομέρειες εξέτασης
+  // Λεπτομέρειες
   fetch(`http://localhost:3000/exam/${thesisId}`)
     .then(res => res.json())
     .then(data => {
@@ -71,35 +62,15 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("examDate").textContent = data.ExamDate || "—";
       document.getElementById("method").textContent = data.ExamMethod || "—";
       document.getElementById("location").textContent = data.Location || "—";
-
       if (data.FileURL) {
         let fileUrl = data.FileURL;
-        if (!/^https?:\/\//i.test(fileUrl)) {
-          fileUrl = `/uploads/${fileUrl.replace(/^\/+/, '')}`;
-        }
+        if (!/^https?:\/\//i.test(fileUrl)) fileUrl = `/uploads/${fileUrl}`;
         document.getElementById("submissionLink").href = fileUrl;
-        document.getElementById("submissionLink").textContent = "Άνοιγμα αρχείου";
+        document.getElementById("submissionLink").textContent = "Άνοιγμα";
       }
     });
 
-  // 2. Υποβολή βαθμού
-  document.getElementById("gradeForm").addEventListener("submit", e => {
-    e.preventDefault();
-    const grade = document.getElementById("grade").value;
-
-    fetch(`http://localhost:3000/exam/${thesisId}/grade`, {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ ProfessorID: user.UserID, Grade: grade })
-    })
-    .then(res => res.json())
-    .then(msg => {
-      alert(msg.message);
-      loadGrades();
-    });
-  });
-
-  // 3. Φέρε βαθμούς τριμελούς
+  // Βαθμοί
   function loadGrades() {
     fetch(`http://localhost:3000/exam/${thesisId}/grades`)
       .then(res => res.json())
@@ -115,7 +86,21 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   loadGrades();
 
-  // 4. Αν είμαι επιβλέπων, εμφάνισε το κουμπί ανακοίνωσης
+  // Καταχώρηση βαθμού
+  document.getElementById("gradeForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const grade = document.getElementById("grade").value;
+    fetch(`http://localhost:3000/exam/${thesisId}/grade`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ ProfessorID: user.UserID, Grade: grade })
+    }).then(res => res.json()).then(msg => {
+      alert(msg.message);
+      loadGrades();
+    });
+  });
+
+  // Ανακοίνωση (αν επιβλέπων)
   if (user.Role === "PROFESSOR") {
     document.getElementById("announcementBox").style.display = "block";
     document.getElementById("announceBtn").addEventListener("click", () => {
@@ -124,13 +109,10 @@ document.addEventListener("DOMContentLoaded", () => {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ announcementText: text })
-      })
-      .then(res => res.json())
-      .then(msg => alert(msg.message));
+      }).then(res => res.json()).then(msg => alert(msg.message));
     });
   }
 });
 </script>
-
 </body>
 </html>
