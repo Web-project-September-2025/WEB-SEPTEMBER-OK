@@ -7,10 +7,6 @@ const fs = require("fs");
 const multer = require("multer");
 const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
-const path = require("path");
-
-// Δήλωση φακέλου public (ή όπως λέγεται ο δικός σου)
-app.use(express.static(path.join(__dirname, "public")));
 
 // constants  
 const JWT_SECRET = "change_me_super_secret";
