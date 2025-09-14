@@ -1,5 +1,8 @@
 // professor-theses.js
 const API_BASE = 'http://localhost:3000';
+const path = require("path");
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 
 // auth helpers 
 function authHeader() {
@@ -342,64 +345,78 @@ function exportList(format) {
   window.open(url, '_blank');
 }
 
-// // Φέρε όλους τους βαθμούς για μια διπλωματική
-// app.get("/exam/:thesisId/grades", (req, res) => {
-//   const { thesisId } = req.params;
-//   const sql = `
-//     SELECT g.GradeID, g.Grade, u.UserName AS ProfessorName
-//     FROM grade g
-//     JOIN users u ON g.ProfessorID = u.UserID
-//     JOIN exam e ON g.ExamID = e.ExamID
-//     WHERE e.ThesisID = ?`;
-//   db.query(sql, [thesisId], (err, results) => {
-//     if (err) return res.status(500).send(err);
-//     res.json(results);
-//   });
-// });
+// ---------------- ΥΠΟ ΕΞΕΤΑΣΗ ----------------
 
-// // Καταχώρησε ή ενημέρωσε βαθμό για έναν καθηγητή
-// app.post("/exam/:examId/grade", (req, res) => {
-//   const { examId } = req.params;
-//   const { professorId, grade } = req.body;
+// Φέρε στοιχεία εξέτασης + τελευταίο αρχείο υποβολής
+app.get("/exam/:thesisId", (req, res) => {
+  const thesisId = req.params.thesisId;
 
-//   const sql = `
-//     INSERT INTO grade (ExamID, ProfessorID, Grade)
-//     VALUES (?, ?, ?)
-//     ON DUPLICATE KEY UPDATE Grade = VALUES(Grade)`;
-//   db.query(sql, [examId, professorId, grade], (err) => {
-//     if (err) return res.status(500).send(err);
-//     res.json({ message: "✅ Ο βαθμός καταχωρήθηκε!" });
-//   });
-// });
+  const sql = `
+    SELECT t.ThesisID, t.Title, t.Description, t.Status,
+           e.ExamDate, e.ExamMethod, e.Location,
+           s.FileURL, s.DateUploaded,
+           u.UserName AS ProfessorName
+    FROM thesis t
+    LEFT JOIN exam e ON t.ThesisID = e.ThesisID
+    LEFT JOIN submissions s ON t.ThesisID = s.ThesisID
+    LEFT JOIN users u ON t.ProfessorID = u.UserID
+    WHERE t.ThesisID = ?
+    ORDER BY s.DateUploaded DESC
+    LIMIT 1
+  `;
 
-// app.get("/exam/:thesisId/announcement", (req, res) => {
-//   const { thesisId } = req.params;
-//   const sql = `
-//     SELECT t.Title, t.Description, e.ExamDate, e.Location, u.UserName AS Professor
-//     FROM thesis t
-//     JOIN exam e ON t.ThesisID = e.ThesisID
-//     JOIN users u ON t.ProfessorID = u.UserID
-//     WHERE t.ThesisID = ?`;
+  db.query(sql, [thesisId], (err, results) => {
+    if (err) return res.status(500).send(err);
+    res.json(results[0] || {});
+  });
+});
 
-//   db.query(sql, [thesisId], (err, results) => {
-//     if (err) return res.status(500).send(err);
-//     if (results.length === 0) return res.status(404).json({ message: "Δεν βρέθηκε διπλωματική" });
+// Καταχώρηση βαθμού (μέλος τριμελούς ή επιβλέπων)
+app.post("/exam/:thesisId/grade", (req, res) => {
+  const { ProfessorID, Grade } = req.body;
+  const thesisId = req.params.thesisId;
 
-//     const ann = results[0];
-//     const announcement = `
-//       Ανακοίνωση Παρουσίασης Διπλωματικής
-//       -----------------------------------
-//       Θέμα: ${ann.Title}
-//       Φοιτητής: [Στοιχεία φοιτητή]
-//       Επιβλέπων: ${ann.Professor}
-//       Ημερομηνία: ${ann.ExamDate}
-//       Τοποθεσία: ${ann.Location}
-//       Περιγραφή: ${ann.Description}
-//     `;
+  const sqlExam = "SELECT ExamID FROM exam WHERE ThesisID = ?";
+  db.query(sqlExam, [thesisId], (err, examResults) => {
+    if (err) return res.status(500).send(err);
+    if (examResults.length === 0) return res.status(404).json({ message: "Δεν υπάρχει εξέταση" });
 
-//     res.json({ announcement });
-//   });
-// });
+    const examId = examResults[0].ExamID;
+    const sqlInsert = "INSERT INTO grade (ExamID, ProfessorID, Grade) VALUES (?, ?, ?)";
+    db.query(sqlInsert, [examId, ProfessorID, Grade], (err2, results) => {
+      if (err2) return res.status(500).send(err2);
+      res.json({ message: "✅ Βαθμός καταχωρήθηκε", gradeId: results.insertId });
+    });
+  });
+});
+
+// Φέρε όλους τους βαθμούς μιας διπλωματικής
+app.get("/exam/:thesisId/grades", (req, res) => {
+  const thesisId = req.params.thesisId;
+
+  const sql = `
+    SELECT g.GradeID, g.Grade, u.UserName AS Professor
+    FROM grade g
+    JOIN exam e ON g.ExamID = e.ExamID
+    JOIN users u ON g.ProfessorID = u.UserID
+    WHERE e.ThesisID = ?
+  `;
+
+  db.query(sql, [thesisId], (err, results) => {
+    if (err) return res.status(500).send(err);
+    res.json(results);
+  });
+});
+
+// Παράγεται ανακοίνωση (μόνο επιβλέπων)
+app.post("/exam/:thesisId/announcement", (req, res) => {
+  const { announcementText } = req.body;
+  const thesisId = req.params.thesisId;
+
+  // εδώ μπορείς να το αποθηκεύσεις σε DB αν θες
+  res.json({ message: "📢 Ανακοίνωση δημιουργήθηκε", thesisId, announcementText });
+});
+
 
 // helpers
 function escapeHtml(s) {
