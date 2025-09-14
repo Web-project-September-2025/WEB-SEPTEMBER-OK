@@ -1,8 +1,5 @@
 // professor-theses.js
 const API_BASE = 'http://localhost:3000';
-const path = require("path");
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 
 // auth helpers 
 function authHeader() {
