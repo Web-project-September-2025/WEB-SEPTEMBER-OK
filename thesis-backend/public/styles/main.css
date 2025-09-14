@@ -1243,10 +1243,3 @@ body.secretary-dashboard::before{
 }
 .import-box h2{ margin: 0 0 10px; font-size: 1.05rem; color: var(--muted); }
 
-.thesis-details-box {
-  background: rgba(255,255,255,0.1);
-  padding: 1rem;
-  margin: 1rem;
-  border-radius: 8px;
-  color: #fff;
-}
