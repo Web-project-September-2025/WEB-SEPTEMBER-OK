@@ -1,0 +1,1245 @@
+/* Full page with background image */
+body.custom-landing {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  background: url("../images/landing-background.png") no-repeat center center fixed;
+  background-size: cover;
+  font-family: "Segoe UI", sans-serif;
+  position: relative;
+}
+
+/* Logo area */
+.overlay-logo {
+  position: absolute;
+  top: 15px;
+  left: 60px;
+}
+
+.logo {
+  width: 500px;
+  opacity: 0.6;
+}
+
+/* Line under logo */
+.top-line {
+  margin-top: 8px;
+  height: 2px;
+  width: 1400px;
+  background-color: white;
+  opacity: 0.5;
+}
+
+/* Bottom left title + εισοδος */
+.bottom-left {
+  position: absolute;
+  bottom: 100px;
+  left: 60px;
+  color: white;
+}
+
+.bottom-left h1 {
+  font-size: 3rem;
+  margin: 0 0 1rem 0;
+  line-height: 1.4;
+}
+
+/* Είσοδος στην πλατφόρμα */
+.entry-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 2rem;
+}
+
+/* Button */
+.btn {
+  background-color: #00ffff;
+  color: rgb(0, 0, 0);
+  border: none;
+  padding: 0.6rem 1.4rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.btn:hover {
+  background-color: #42aed5;
+}
+
+/* Κεντρικό πλαίσιο εισόδου */
+.login-box {
+  position: absolute;
+  top: 55%;                      /* Κάθετη στοίχιση στο κέντρο */
+  left: 50%;                     /* Οριζόντια στοίχιση στο κέντρο */
+  transform: translate(-50%, -50%);  /* Μεταφορά ώστε να "κάτσει" ακριβώς στο κέντρο */
+  background-color: rgba(255, 255, 255, 0.94); /* Λευκό με ελαφριά διαφάνεια */
+  padding: 2rem 2.5rem;          /* Εσωτερικά περιθώρια */
+  border-radius: 12px;           /* Στρογγυλεμένες γωνίες */
+  width: 90%;                    /* Πλάτος σχετικό με την οθόνη για κινητά ή τάμπλετ κλπ */
+  max-width: 400px;             /* Μέγιστο πλάτος για υπολογιστή */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); /* Σκιά γύρω από το πλαίσιο */
+  opacity: 0.9;
+}
+
+/* Τίτλος "Είσοδος στην Πλατφόρμα" */
+.login-box h2 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #004d40;                
+  opacity: 1.0;
+}
+
+/* Η ίδια η φόρμα */
+.login-box form {
+  display: flex;
+  flex-direction: column;       
+   opacity: 1.0;
+}
+
+/* Ετικέτες των πεδίων */
+.login-box label {
+  margin-bottom: 0.4rem;        /* Απόσταση από input */
+  font-weight: 500;             
+  opacity: 1.0;
+}
+
+/* Όλα τα input και select πεδία */
+.login-box input,
+.login-box select {
+  padding: 0.6rem;              /* Εσωτερικό padding */
+  margin-bottom: 1rem;          /* Απόσταση μεταξύ των πεδίων */
+  border: 1px solid #ccc;       /* Ανοιχτό γκρι περίγραμμα */
+  border-radius: 6px;          
+  font-size: 1rem;
+  opacity: 1.0;
+}
+
+
+/* Φόντο για το dashboard του φοιτητή */
+body.student-dashboard {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  background: url("../images/student.png") no-repeat center center fixed;
+  background-size: cover;
+  font-family: "Segoe UI", sans-serif;
+  position: relative;
+  color: white;
+}
+
+/* Logo area */
+.overlay-logo {
+  position: absolute;
+  top: 30px;
+  left: 60px;
+}
+
+.logo {
+  width: 500px;
+  opacity: 0.6;
+}
+
+/* Γραμμή κάτω από το logo */
+.top-line {
+  margin-top: 8px;
+  height: 2px;
+  width: 1470px;
+  background-color: white;
+  opacity: 0.5;
+}
+
+/* Τίτλος πάνω δεξιά */
+.top-right-title {
+  position: absolute;
+  top: 30px;
+  right: 60px;
+}
+
+.top-right-title h2 {
+  margin: 0;
+  font-size: 2.5rem;
+  color: white;
+}
+
+/* Γραμμή επικεφαλίδων */
+/* Περιεχόμενο: Οι Διπλωματικές μου */
+.thesis-list {
+  position: absolute;
+  top: 410px;        
+  left: 60px;
+  right: 60px;
+}
+
+.thesis-headers {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.4);
+  padding-bottom: 0.5rem;
+}
+
+/* Γραμμή διπλωματικής */
+.thesis-row {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr;
+  align-items: center;
+  padding: 0.4rem 0;
+  color: #e0e0e0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-small {
+  display: inline-block;
+  text-decoration: none;
+  padding: 0.4rem 5rem;
+  background-color: #00796b;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.3s ease;
+}
+
+.btn-small:hover {
+  background-color: #004d40;
+}
+
+/* Κουμπί αποσύνδεσης*/
+.logout-btn {
+  position: absolute;
+  bottom: 30px;
+  left: 60px;
+  background-color: #00796b;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.4rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.logout-btn:hover {
+  background-color: #004d40;
+}
+
+.thesis-details-box {
+  position: absolute;
+  top: 200px; 
+  left: 60px;
+  right: 60px;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 2rem;
+  border-radius: 12px;
+  width: 700px;
+  margin: 0 auto;
+  color: white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.thesis-details-box h3 {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  padding-bottom: 0.5rem;
+  text-align: center;
+}
+
+.info-pair {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+/*Ενότητα λεπτομερειών*/
+.thesis-details-section {
+  position: absolute;
+  top: 220px; 
+  left: 60px;
+  right: 60px;
+  color: white;
+}
+
+.thesis-details-section h3 {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.thesis-details-section p {
+  font-size: 1.1rem;
+  margin-bottom: 0.8rem;
+}
+
+.thesis-details-section {
+  position: absolute;
+  top: 60%;
+  left: 50%;
+  transform: translate(-50%, -50%); 
+  padding: 2rem;
+  border-radius: 12px;
+  color: white;
+  width: 300px;
+}
+
+.thesis-details-section input[type="text"],
+.thesis-details-section input[type="email"] {
+  width: 100%;
+  padding: 0.6rem;
+  border-radius: 6px;
+  border: none;
+  margin-top: 0.3rem;
+  font-size: 1rem;
+}
+
+.thesis-details-section button[type="submit"] {
+  position: absolute;
+  top: 95%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: background-color 0.3s ease;
+}
+
+.profile-box {
+  position: absolute;
+  top: 170px;
+  right: 60px;
+  width: 300px;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: 10px;
+  color: white;
+  font-size: 0.95rem;
+}
+
+.profile-box h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  padding-bottom: 0.5rem;
+}
+
+#examBtn {
+  position: absolute;
+  bottom: 30px;
+  left: 1300px;
+  padding: 10px 20px;
+  background-color: #0e6ba8;
+  color: white;
+  text-decoration: none;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+#examBtn:hover {
+  background-color: #094e80;
+}
+
+#assignmentBtn {
+  position: absolute;
+  bottom: 30px;
+  left: 1300px;
+  padding: 10px 20px;
+  background-color: #0e6ba8;
+  color: white;
+  text-decoration: none;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+#assignmentBtn:hover {
+  background-color: #094e80;
+}
+
+/* Professor Dashboard */
+body.professor-dashboard{
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  background: url("../images/student.png") no-repeat center center fixed;
+  background-size: cover;
+  font-family: "Segoe UI", sans-serif;
+  position: relative;
+  color: white;
+  padding-top: var(--header-offset);
+}
+
+:root{
+  --header-offset: 220px;  
+}
+
+/* Logo */
+.overlay-logo {
+  position: absolute;
+  top: 30px;
+  left: 60px;
+}
+.logo { width: 500px; opacity: 0.6; }
+
+/* Λευκή γραμμή κάτω από το logo */
+.top-line{
+  margin-top: 8px;
+  height: 2px;
+  width: min(1400px, calc(100vw - 120px));
+  background-color: rgba(255,255,255,.7);
+}
+
+/* Τίτλος πάνω δεξιά */
+.top-right-title{
+  position: absolute;
+  top: 30px;
+  right: 60px;
+}
+.top-right-title h2{ margin:0; font-size:2.5rem; color:#fff; }
+
+
+.button-section{
+  position: relative;
+  z-index: 3;              
+  margin: 32px auto 0;
+  max-width: 1200px;
+  padding: 0 28px;
+}
+
+.button-section, .button-section *{
+  filter: none !important;
+  opacity: 1;              
+}
+
+.menu-grid{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(260px, 1fr));
+  gap: 26px;
+  align-items: stretch;
+}
+.menu-grid > button{
+  width: 100%;
+  background: #0b72c9;     
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(0,0,0,.35);
+}
+.menu-grid.center-last-2 > :nth-last-child(2){ grid-column: 2; }
+.menu-grid.center-last-2 > :last-child       { grid-column: 3; }
+
+.button-section button{
+  padding: 15px 30px;
+  font-size: 1.1rem;
+  border-radius: 6px;
+  border: none;
+  background-color: #0077cc;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color .3s ease;
+}
+.button-section button:hover{ background-color:#005fa3; }
+
+/* Topics-Management */
+body.topics-management {
+margin: 0;
+  padding: 0;
+  height: 100vh;
+  background: url("../images/student.png") no-repeat center center fixed;
+  background-size: cover;
+  font-family: "Segoe UI", sans-serif;
+  position: relative;
+  color: white;
+}
+
+
+.overlay-logo {
+  position: absolute;
+  top: 5px;
+  left: 5px; 
+}
+
+
+/* Γραμμή κάτω από το logo */
+.top-line {
+  margin-top: 8px;
+  height: 2px;
+  width: 1470px;
+  background-color: white;
+  opacity: 0.5;
+}
+
+/* Τίτλος πάνω δεξιά */
+.top-right-title {
+  position: absolute;
+  top: 30px;
+  right: 10px;
+}
+
+.top-right-title h2 {
+  margin: 0;
+  font-size: 2.5rem;
+  color: white;
+}
+
+.form-section {
+  position: absolute;
+  top: 170px; /* Πόσο κάτω από την κορυφή να εμφανιστεί */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(255, 255, 255, 0.08);
+  padding: 0.6rem 2rem;
+  border-radius: 12px;
+  max-width: 700px;
+  width: 100%;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+
+.row {
+  margin-bottom: 0.3rem; 
+}
+
+/* Για το δεύτερο row που θέλουμε δύο στήλες */
+.two-columns {
+  display: flex;
+  gap: 1rem; /* κενό ανάμεσα στις στήλες */
+}
+
+.column {
+  flex: 1; /* οι στήλες μοιράζονται τον χώρο ισότιμα */
+  display: flex;
+  flex-direction: column;
+}
+
+
+.thesis-list {
+  position: absolute;
+  top: 470px;        
+  left: 60px;
+  right: 60px;
+}
+
+.thesis-headers {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.4);
+  padding-bottom: 0.5rem;
+}
+
+/* Assign-Topic */
+body.assign-topic {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  background: url("../images/student.png") no-repeat center center fixed;
+  background-size: cover;
+  font-family: "Segoe UI", sans-serif;
+  position: relative;
+  color: white;
+}
+
+.overlay-logo {
+  position: absolute;
+  top: 30px;
+  left: 60px;
+}
+
+.logo {
+  width: 500px;
+  opacity: 0.6;
+}
+
+.top-line {
+  margin-top: 8px;
+  height: 2px;
+  width: 1470px;
+  background-color: white;
+  opacity: 0.5;
+}
+
+.top-right-title {
+  position: absolute;
+  top: 30px;
+  right: 60px;
+}
+
+.top-right-title h2 {
+  margin: 0;
+  font-size: 2.5rem;
+  color: white;
+}
+
+.search-student, .assign-topic-section {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(255,255,255,0.08);
+  padding: 2rem 2.5rem;
+  border-radius: 12px;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 0 15px rgba(0,0,0,0.3);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.search-student {
+  top: 200px;
+}
+
+.assign-topic-section {
+  top: 400px;
+}
+
+.search-student h3, .assign-topic-section h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.4rem;
+  border-bottom: 1px solid rgba(255,255,255,0.3);
+  padding-bottom: 0.5rem;
+  text-align: center;
+}
+
+#searchStudentForm {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+}
+
+#searchStudentForm label {
+  font-weight: 500;
+}
+
+#searchInput {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+
+#studentResult {
+  margin-top: 1rem;
+  font-size: 1.1rem;
+  color: #fff;
+}
+
+#availableTopicsList {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.btn-small {
+  display: inline-block;
+  text-decoration: none;
+  padding: 0.4rem 2.5rem;
+  background-color: #00796b;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.3s ease;
+  border: none;
+}
+
+.btn-small:hover {
+  background-color: #004d40;
+}
+
+.logout-btn {
+  position: absolute;
+  bottom: 30px;
+  left: 60px;
+  background-color: #00796b;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.4rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.logout-btn:hover {
+  background-color: #004d40;
+}
+
+/* Modal Επιβεβαίωσης*/
+.modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-content {
+  background: #fff;
+  color: #222;
+  padding: 2rem 2.5rem;
+  border-radius: 10px;
+  min-width: 300px;
+  max-width: 90vw;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+  text-align: center;
+}
+.modal-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+}
+
+/* Επιτροπή Πρόσκλησης */
+.committee-invite-section {
+  margin: 0 auto;
+  margin-top: 30px;
+  max-width: 600px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.3);
+  padding: 2rem 2.5rem;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.committee-invite-section h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.3rem;
+  border-bottom: 1px solid rgba(255,255,255,0.3);
+  padding-bottom: 0.5rem;
+  text-align: center;
+}
+
+#inviteCommitteeForm label {
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+}
+
+#inviteCommitteeForm select {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+#inviteCommitteeMsg {
+  font-size: 1.05rem;
+  min-height: 1.2em;
+  text-align: center;
+}
+
+/*Theme tokens*/
+:root{
+  --bg: #0d0f14;
+  --primary: #0ea5e9;       
+  --primary-hover: #0284c7;
+  --text: #e5eef7;
+  --muted: #9fb3c8;
+  --glass-bg: rgba(255,255,255,0.08);
+  --glass-brd: rgba(255,255,255,0.15);
+  --shadow: 0 10px 30px rgba(0,0,0,0.35);
+  --radius: 14px;
+}
+
+/* Background */
+html, body{
+  height:100%;
+}
+body{
+  margin:0;
+  color:var(--text);
+  background: var(--bg) url("images/landing-background.jpg") center/cover no-repeat fixed;
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.65));
+  pointer-events:none;
+}
+
+/* Header*/
+header{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  padding:28px 46px 18px;
+  margin:18px 18px 0;
+  border-radius: var(--radius);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-brd);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+}
+
+/* λευκή γραμμή κάτω από το header*/
+header::after{
+  content:"";
+  position:absolute;
+  left:24px;
+  right:24px;
+  bottom:-1px;
+  height:1px;
+  background: rgba(255,255,255,0.35);
+}
+
+header h1{
+  margin:0;
+  font-weight:800;
+  font-size: clamp(1.4rem, 2.2vw, 2.4rem);
+  letter-spacing: .5px;
+}
+
+/* Button styles*/
+button, .btn, a.btn{
+  -webkit-tap-highlight-color:transparent;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:.5rem;
+  padding:14px 22px;
+  background: var(--primary);
+  color:white;
+  border:none;
+  border-radius: 12px;
+  font-size: clamp(.95rem, 1.2vw, 1.05rem);
+  font-weight:700;
+  text-decoration:none;
+  cursor:pointer;
+  transition: transform .06s ease, background .15s ease, box-shadow .15s ease;
+  box-shadow: 0 6px 18px rgba(14,165,233,.25);
+}
+button:hover, .btn:hover, a.btn:hover{
+  background: var(--primary-hover);
+}
+button:active, .btn:active, a.btn:active{
+  transform: translateY(1px);
+}
+
+/* Αποσύνδεση κάτω-αριστερά */
+header + .logout-fixed{
+  position:fixed;
+  left:36px;
+  bottom:36px;
+}
+
+main.dashboard{
+  max-width: 1200px;
+  margin: 28px auto 120px;
+  padding: 0 24px;
+}
+
+main.dashboard h2{
+  font-size: clamp(1.2rem, 1.8vw, 1.6rem);
+  font-weight:700;
+  margin: 0 0 16px;
+  color: var(--muted);
+}
+
+main.dashboard > table{
+  width:100%;
+  border-collapse: collapse;
+  background: var(--glass-bg);
+  border:1px solid var(--glass-brd);
+  border-radius: var(--radius);
+  overflow:hidden;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+}
+
+/* head */
+main.dashboard thead th{
+  text-align:left;
+  padding:18px 20px;
+  font-size:.95rem;
+  color:#d9e7f5;
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+  border-bottom:1px solid var(--glass-brd);
+}
+
+/* rows */
+main.dashboard tbody td{
+  padding:16px 20px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  color: var(--text);
+  font-size: .98rem;
+}
+
+main.dashboard tbody tr:hover{
+  background: rgba(255,255,255,0.06);
+}
+
+/* το κελί “Ενέργειες” να φαίνεται σαν panel */
+main.dashboard tbody td:last-child{
+  text-align:right;
+  white-space:nowrap;
+}
+
+/* Responsive table */
+@media (max-width: 800px){
+  main.dashboard > table,
+  main.dashboard thead,
+  main.dashboard tbody,
+  main.dashboard th,
+  main.dashboard td,
+  main.dashboard tr{
+    display:block;
+    width:100%;
+  }
+
+  main.dashboard thead{
+    display:none;
+  }
+
+  main.dashboard tbody tr{
+    margin:14px 0;
+    border:1px solid var(--glass-brd);
+    border-radius:12px;
+    overflow:hidden;
+  }
+
+  main.dashboard tbody td{
+    border:none;
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+  }
+
+  main.dashboard tbody td::before{
+    content: attr(data-label);
+    color: var(--muted);
+    font-weight:600;
+  }
+
+  main.dashboard tbody td:last-child{
+    justify-content:flex-end;
+  }
+}
+
+td[data-label="Κατάσταση"], td:nth-child(4){
+  font-weight:700;
+}
+
+
+/* modal (details) */
+.modal.hidden{ display:none; }
+.modal{
+  position:fixed; inset:0; z-index:50;
+}
+.modal__backdrop{
+  position:absolute; inset:0;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(2px);
+}
+.modal__panel{
+  position:absolute;
+  right: max(16px, 6vw);
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(560px, 92vw);
+  max-height: 86vh;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-brd);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  display:flex; flex-direction: column;
+}
+.modal__header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--glass-brd);
+}
+.modal__header h3{ margin:0; font-size:1.1rem; }
+.modal__close{
+  background: transparent;
+  border: 1px solid var(--glass-brd);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.modal__body{
+  padding: 16px 18px;
+  overflow:auto;
+}
+.modal__footer{
+  padding: 12px 18px;
+  border-top: 1px solid var(--glass-brd);
+  display:flex; justify-content:flex-end; gap:10px;
+}
+
+.kv{ margin: 8px 0; }
+.kv > span{
+  color: var(--muted); display:inline-block; min-width: 120px;
+}
+.kv > p{ margin:.2rem 0 0; color: var(--text); }
+.grid2{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 720px){
+  .grid2{ grid-template-columns: 1fr; }
+}
+
+/*THEME TOKENS*/
+:root{
+  --bg: #0d0f14;
+  --primary: #0ea5e9;
+  --primary-hover: #0284c7;
+  --text: #e5eef7;
+  --muted: #9fb3c8;
+  --glass-bg: rgba(255,255,255,0.08);
+  --glass-brd: rgba(255,255,255,0.16);
+  --shadow: 0 10px 30px rgba(0,0,0,0.35);
+  --radius: 14px;
+
+  /* badges */
+  --ok: #22c55e;
+  --ok-ink: #04250f;
+  --info: #60a5fa;
+  --info-ink: #081a33;
+}
+
+/*BASE BACKDROP*/
+html, body { height: 100%; }
+
+body.secretary-dashboard{
+  margin:0;
+  color:var(--text);
+  background: var(--bg) url("../images/secretary.webp") center/cover no-repeat fixed;
+}
+
+body.secretary-dashboard::before{
+  content:"";
+  position:fixed; inset:0;
+  background:linear-gradient(180deg, rgba(0,0,0,.15), rgba(0,0,0,.25));
+  pointer-events:none;
+}
+
+/*HEADER*/
+.sd-header{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  padding:24px 32px;
+  margin:22px 22px 0;
+  border-radius: var(--radius);
+  background: var(--glass-bg);
+  border:1px solid var(--glass-brd);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+}
+.sd-header h1{
+  margin:0;
+  font-weight:800;
+  font-size: clamp(1.3rem, 2.2vw, 2.2rem);
+  letter-spacing:.3px;
+}
+.sd-logout{
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:12px 18px;
+  background: var(--primary);
+  color:white; border:none; border-radius:12px;
+  font-weight:700; cursor:pointer;
+  box-shadow: 0 6px 18px rgba(14,165,233,.25);
+  transition: background .15s, transform .06s;
+}
+.sd-logout:hover{ background: var(--primary-hover); }
+.sd-logout:active{ transform: translateY(1px); }
+
+/*MAIN / CARD*/
+.sd-main{
+  max-width:1200px;
+  margin: 26px auto 120px;
+  padding: 0 22px;
+}
+.sd-main h2{
+  margin: 0 0 14px;
+  font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+  color: var(--muted);
+  font-weight:700;
+}
+.sd-card{
+  background: var(--glass-bg);
+  border:1px solid var(--glass-brd);
+  border-radius: var(--radius);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+  overflow:hidden;
+}
+
+/* TABLE*/
+.sd-table{
+  width:100%;
+  border-collapse: separate;
+  border-spacing:0;
+}
+.sd-table thead th{
+  text-align:left;
+  padding:16px 18px;
+  border-bottom:1px solid var(--glass-brd);
+  color:#d9e7f5;
+  font-size:.95rem;
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+}
+.sd-table tbody td{
+  padding:14px 18px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  font-size:.98rem;
+  color:var(--text);
+  vertical-align: top;
+}
+.sd-table tbody tr:hover{
+  background: rgba(255,255,255,0.06);
+}
+
+.sd-desc{
+  max-width: 520px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* action button*/
+.sd-btn, .sd-btn-small, a.sd-btn, a.sd-btn-small{
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:8px 12px;
+  background: var(--primary);
+  color:#fff; text-decoration:none;
+  border-radius:10px; font-weight:700;
+  transition: background .15s, transform .06s;
+  box-shadow: 0 6px 14px rgba(14,165,233,.22);
+}
+.sd-btn-small{ font-size:.85rem; }
+.sd-btn:hover, .sd-btn-small:hover{ background: var(--primary-hover); }
+.sd-btn:active, .sd-btn-small:active{ transform: translateY(1px); }
+
+.sd-badge{
+  display:inline-flex; align-items:center; gap:.4rem;
+  padding:6px 10px;
+  border-radius:999px;
+  font-weight:800; letter-spacing:.2px;
+  font-size:.78rem;
+  border:1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.08);
+}
+.sd-badge::before{
+  content:"";
+  width:8px; height:8px; border-radius:50%;
+  opacity:.95;
+}
+/* ACTIVE → πράσινο */
+.sd-active{
+  background: color-mix(in oklab, var(--ok) 16%, transparent);
+  color: var(--text);
+  border-color: color-mix(in oklab, var(--ok) 28%, transparent);
+}
+.sd-active::before{ background: var(--ok); }
+/* UNDER-EXAMINATION → μπλε */
+.sd-under-examination{
+  background: color-mix(in oklab, var(--info) 18%, transparent);
+  color: var(--text);
+  border-color: color-mix(in oklab, var(--info) 30%, transparent);
+}
+.sd-under-examination::before{ background: var(--info); }
+
+/*DETAILS PANEL*/
+.details-box{
+  margin-top: 22px;
+  padding: 20px;
+  border-radius: 12px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-brd);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow);
+}
+.details-box h3{
+  margin:0 0 10px;
+  font-size: clamp(1rem, 1.6vw, 1.2rem);
+}
+.details-box p{ margin:.4rem 0; }
+.committee-list{
+  margin: 6px 0 0; padding-left: 18px;
+}
+.committee-list li{ margin: 2px 0; color: var(--text); }
+
+/*RESPONSIVE*/
+@media (max-width: 900px){
+  .sd-desc{ max-width: 300px; }
+}
+@media (max-width: 760px){
+  .sd-header{ padding:18px; margin:16px 16px 0; }
+  .sd-main{ padding: 0 16px; }
+  .sd-desc{ max-width: 200px; }
+  .sd-table thead{ display:none; }
+  .sd-table, .sd-table tbody, .sd-table tr, .sd-table td{ display:block; width:100%; }
+  .sd-table tbody tr{ border-bottom:1px solid rgba(255,255,255,0.12); }
+  .sd-table tbody td{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    gap:10px; border:none;
+  }
+  .sd-table tbody td::before{
+    content: attr(data-label);
+    color: var(--muted);
+    font-weight:600;
+  }
+}
+
+.box-row{
+  margin-top: 15px; padding: 12px; border-radius: 8px;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.30);
+}
+.box-row input,
+.box-row textarea{
+  width: 100%; max-width: 460px;
+  padding: 8px 10px; border-radius: 8px; border: 1px solid #cfd6de;
+  background: rgba(0,0,0,0.25); color: #fff;
+}
+.box-row textarea{ min-height: 90px; resize: vertical; }
+.row-actions{ margin-top: 10px; }
+
+/*κουμπί για ακύρωση */
+.sd-danger{
+  background:#c34949;
+  box-shadow: 0 6px 14px rgba(195, 73, 73, .25);
+}
+.sd-danger:hover{ background:#a83a3a; }
+
+/* εισαγωγή χρηστών*/
+.import-box{
+  margin-top: 28px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-brd);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+}
+.import-box h2{ margin: 0 0 10px; font-size: 1.05rem; color: var(--muted); }
+

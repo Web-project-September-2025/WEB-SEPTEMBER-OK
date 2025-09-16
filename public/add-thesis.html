@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Προσθήκη Θέματος</title>
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body class="topics-management">
+
+  <div class="overlay-logo">
+    <img src="images/logo.png" alt="logo" class="logo" />
+    <div class="top-line"></div>
+  </div>
+
+  <div class="top-right-title">
+    <h2>Προσθήκη Νέου Θέματος</h2>
+  </div>
+
+  <section class="form-section">
+    <form id="addTopicForm">
+      <div class="row">
+        <label for="title">Τίτλος Θέματος:</label>
+        <input type="text" id="title" name="title" required />
+      </div>
+
+      <div class="row">
+        <label for="summary">Σύνοψη:</label>
+        <textarea id="summary" name="summary" rows="5" required></textarea>
+      </div>
+
+      <div class="row">
+        <label for="pdfFile">Επισύναψη PDF (προαιρετικό):</label>
+        <input type="file" id="pdfFile" name="pdfFile" accept="application/pdf" />
+      </div>
+
+      <div class="row">
+        <button type="submit" class="btn-small">Προσθήκη</button>
+        <button type="button" class="btn-small" onclick="window.history.back()">Πίσω</button>
+      </div>
+    </form>
+  </section>
+
+  <script>
+    const API_BASE = 'http://localhost:3000';
+    function authHeader() {
+      const token = localStorage.getItem('authToken');
+      return token ? { 'Authorization': 'Bearer ' + token } : {};
+    }
+
+    document.getElementById('addTopicForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+
+      fetch(`${API_BASE}/professor/topics`, {
+        method: 'POST',
+        headers: { ...authHeader() },
+        body: formData
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Αποτυχία δημιουργίας');
+        return res.json();
+      })
+      .then(() => {
+        alert('Το θέμα προστέθηκε!');
+        window.location.href = 'topics-management.html';
+      })
+      .catch(err => alert('Σφάλμα: ' + err.message));
+    });
+  </script>
+
+</body>
+</html>

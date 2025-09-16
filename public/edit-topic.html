@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Επεξεργασία Θέματος</title>
+  <link rel="stylesheet" href="styles/main.css" />
+  <script defer src="edit-topic.js"></script>
+</head>
+<body class="topics-management">
+  <div class="overlay-logo">
+    <img src="images/logo.png" alt="logo" class="logo" />
+    <div class="top-line"></div>
+  </div>
+
+  <div class="top-right-title">
+    <h2>Επεξεργασία Θέματος</h2>
+  </div>
+
+  <section class="form-section">
+    <form id="editForm">
+      <div class="row">
+        <label for="title">Τίτλος:</label>
+        <input type="text" id="title" name="title" required />
+      </div>
+
+      <div class="row">
+        <label for="summary">Σύνοψη:</label>
+        <textarea id="summary" name="summary" rows="5" required></textarea>
+      </div>
+
+      <div class="row">
+        <label for="status">Κατάσταση:</label>
+        <select id="status" name="status">
+          <option value="UNDER-ASSIGNMENT">UNDER-ASSIGNMENT</option>
+          <option value="ACTIVE">ACTIVE</option>
+          <option value="UNDER-EXAMINATION">UNDER-EXAMINATION</option>
+          <option value="FINISHED">FINISHED</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label for="pdfFile">Νέο PDF (προαιρετικό):</label>
+        <input type="file" id="pdfFile" name="pdfFile" accept="application/pdf" />
+      </div>
+
+      <div class="row">
+        <button type="submit" class="btn-small">Αποθήκευση</button>
+        <button type="button" class="btn-small" onclick="window.history.back()">Πίσω</button>
+      </div>
+    </form>
+  </section>
+</body>
+</html>

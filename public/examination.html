@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Υπό Εξέταση</title>
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body class="student-dashboard">
+
+  <div class="overlay-logo">
+    <img src="images/logo.png" alt="logo" class="logo" />
+    <div class="top-line"></div>
+  </div>
+  
+  <div class="top-right-title">
+    <h2>Υπό Εξέταση</h2>
+  </div>
+
+  <div class="thesis-details-section">
+    <form id="examForm" enctype="multipart/form-data">
+      <label for="file">Ανέβασε αρχείο:</label>
+      <input type="file" id="file" name="file" required />
+
+      <label for="link">Εξωτερικός Σύνδεσμος:</label>
+      <input type="url" id="link" name="link" placeholder="π.χ. https://drive.google.com/..." />
+
+      <label for="date">Ημερομηνία & Ώρα Εξέτασης:</label>
+      <input type="datetime-local" id="date" name="date" required />
+
+      <label for="method">Τρόπος Εξέτασης:</label>
+      <select id="method" name="method" required>
+        <option value="IN-PERSON">Δια ζώσης</option>
+        <option value="ONLINE">Διαδικτυακά</option>
+      </select>
+
+      <label for="location">Τοποθεσία / Σύνδεσμος:</label>
+      <input type="text" id="location" name="location" required />
+
+      <button type="submit" class="btn-small">Αποθήκευση</button>
+    </form>
+  </div>
+
+  <button class="logout-btn" onclick="window.location.href='student-dashboard.html'">Επιστροφή</button>
+
+  <script>
+  // Παίρνω το thesis id από το query string
+  const params = new URLSearchParams(window.location.search);
+  const thesisID = params.get("id");
+
+  document.getElementById("examForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const file = document.getElementById("file").files[0];
+    const link = document.getElementById("link").value;
+    const date = document.getElementById("date").value;         // YYYY-MM-DDTHH:mm
+    const method = document.getElementById("method").value;     // IN-PERSON | ONLINE
+    const location = document.getElementById("location").value;
+
+    try {
+      const res = await fetch("http://localhost:3000/examination", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ThesisID: thesisID,
+          FileURL: file ? file.name : null,
+          LinkURL: link || null,
+          ExamDate: date,
+          ExamMethod: method,
+          Location: location,
+        }),
+      });
+      if (!res.ok) throw new Error("Αποτυχία αποθήκευσης!");
+      await res.json();
+      alert("✅ Τα στοιχεία καταχωρήθηκαν!");
+      window.location.href = "student-dashboard.html";
+    } catch (err) {
+      alert("⛔ Σφάλμα: " + err.message);
+    }
+  });
+</script>
+
+</body>
+</html>

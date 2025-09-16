@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Υπό Ανάθεση Διπλωματική</title>
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body class="student-dashboard">
+  <!-- Logo & γραμμή -->
+  <div class="overlay-logo">
+    <img src="images/logo.png" alt="logo" class="logo" />
+    <div class="top-line"></div>
+  </div>
+
+  <!-- Τίτλος -->
+  <div class="top-right-title">
+    <h2>Διπλωματική: Υπό Ανάθεση</h2>
+  </div>
+
+  <div class="thesis-details-section">
+    <h3 id="thesisTitle">Τίτλος</h3>
+    <p id="thesisDescription">Περιγραφή</p>
+
+    <label for="professorSelect">Προσθήκη μέλους επιτροπής:</label>
+    <select id="professorSelect"></select>
+    <button id="inviteBtn" class="btn-small">Πρόσκληση</button>
+
+    <h4>Αιτήσεις προς καθηγητές:</h4>
+    <ul id="requestsList"></ul>
+  </div>
+
+  <button class="logout-btn" onclick="window.location.href='student-dashboard.html'">Επιστροφή</button>
+
+  <script>
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  document.addEventListener("DOMContentLoaded", () => {
+    if (!user || user.Role !== "STUDENT") {
+      alert("⛔ Μη εξουσιοδοτημένη πρόσβαση");
+      window.location.href = "login.html";
+      return;
+    }
+
+    // Φέρε τη ΔΕ του φοιτητή που είναι UNDER-ASSIGNMENT (υπό ανάθεση)
+    fetch(`http://localhost:3000/thesis/student/${user.UserID}`)
+      .then(res => res.json())
+      .then(theses => {
+        const thesis = theses.find(t => t.Status === "UNDER-ASSIGNMENT");
+        if (!thesis) {
+          alert("Δεν βρέθηκε διπλωματική σε κατάσταση 'Υπό Ανάθεση'");
+          return;
+        }
+
+        document.getElementById("thesisTitle").textContent = thesis.Title;
+        document.getElementById("thesisDescription").textContent = thesis.Description;
+
+        // Ενημέρωση χρήστη, την τριμελή την ορίζει ο επιβλέπων
+        const area = document.querySelector(".thesis-details-section");
+        const info = document.createElement("div");
+        info.className = "muted";
+        info.style.marginTop = "12px";
+        info.textContent = "Η ανάθεση τριμελούς πραγματοποιείται από τον επιβλέποντα. Θα ειδοποιηθείτε όταν ολοκληρωθεί.";
+        area.appendChild(info);
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Σφάλμα φόρτωσης.");
+      });
+  });
+</script>
+
+</body>
+</html>

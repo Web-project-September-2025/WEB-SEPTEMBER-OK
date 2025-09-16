@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Διαχείριση Θεμάτων</title>
+  <link rel="stylesheet" href="styles/main.css" />
+
+  <!-- Μικρή διάταξη για 3 στήλες Τίτλος, Κατάσταση, Ενέργειες -->
+  <style>
+    .thesis-headers, .thesis-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1.5fr; 
+      gap: 12px;
+      align-items: center;
+    }
+    .thesis-status {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 12px;
+      background: #eee;
+      color: #111;
+      line-height: 20px;
+    }
+    .empty {
+      padding: 10px 0;
+      opacity: 0.8;
+    }
+  </style>
+
+  <script defer src="topics-management.js"></script>
+</head>
+<body class="topics-management">
+
+  <div class="overlay-logo">
+    <img src="images/logo.png" alt="logo" class="logo" />
+    <div class="top-line"></div>
+  </div>
+
+  <div class="top-right-title">
+    <h2>Dashboard Καθηγητή</h2>
+  </div>
+
+  <!-- Λίστα Θεμάτων -->
+  <section class="thesis-list">
+    <div class="thesis-headers">
+      <span>Τίτλος</span>
+      <span>Κατάσταση</span>
+      <span>Ενέργειες</span>
+    </div>
+    <div id="topicsList"></div>
+  </section>
+
+  <!-- Φόρμα Προσθήκης -->
+  <section class="form-section">
+    <h3>Προσθήκη Νέου Θέματος</h3>
+    <form id="addTopicForm">
+      <div class="row">
+        <label for="title">Τίτλος Θέματος:</label><br />
+        <input type="text" id="title" name="title" required />
+      </div>
+
+      <div class="row two-columns">
+        <div class="column">
+          <label for="summary">Σύνοψη:</label><br />
+          <textarea id="summary" name="summary" rows="4" required></textarea>
+        </div>
+        <div class="column">
+          <label for="pdfFile">Επισύναψη PDF (προαιρετικό):</label><br />
+          <input type="file" id="pdfFile" name="pdfFile" accept="application/pdf" />
+        </div>
+      </div>
+
+      <div class="row">
+        <button type="submit" class="btn-small">Προσθήκη Θέματος</button>
+      </div>
+    </form>
+  </section>
+
+</body>
+</html>

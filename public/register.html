@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8">
+  <title>Δημιουργία Χρήστη</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+  <h2>Δημιουργία Χρήστη</h2>
+  <form id="registerForm">
+    <label for="username">Όνομα:</label>
+    <input type="text" id="username" name="username" required>
+
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required>
+
+    <label for="password">Κωδικός:</label>
+    <input type="password" id="password" name="password" required>
+
+    <label for="role">Ρόλος:</label>
+    <select id="role" name="role" required>
+      <option value="STUDENT">Φοιτητής</option>
+      <option value="PROFESSOR">Διδάσκων</option>
+      <option value="SECRETARY">Γραμματεία</option>
+    </select>
+
+    <button type="submit">Εγγραφή</button>
+  </form>
+
+  <script>
+    document.getElementById("registerForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const data = {
+        UserName: document.getElementById("username").value,
+        Email: document.getElementById("email").value,
+        Password: document.getElementById("password").value,
+        Role: document.getElementById("role").value
+      };
+
+      fetch("http://localhost:3000/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      })
+      .then(res => res.json())
+      .then(result => {
+        alert("✅ Ο λογαριασμός δημιουργήθηκε!");
+        window.location.href = "index.html"; // πίσω στο login
+      })
+      .catch(err => alert("⛔ Σφάλμα: " + err.message));
+    });
+  </script>
+</body>
+</html>

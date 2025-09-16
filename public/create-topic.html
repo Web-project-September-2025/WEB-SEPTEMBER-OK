@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8">
+  <title>Δημιουργία Νέου Θέματος</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+  <h2>Καταχώρηση Νέου Θέματος Διπλωματικής</h2>
+  <form id="createTopicForm" enctype="multipart/form-data">
+    <label for="title">Τίτλος:</label>
+    <input type="text" id="title" required>
+
+    <label for="description">Περιγραφή:</label>
+    <textarea id="description" required></textarea>
+
+    <label for="start">Ημ. Έναρξης:</label>
+    <input type="date" id="start" required>
+
+    <label for="end">Ημ. Λήξης:</label>
+    <input type="date" id="end" required>
+
+    <label for="pdf">Ανέβασμα PDF:</label>
+    <input type="file" id="pdf" accept="application/pdf">
+
+    <button type="submit" class="btn">Υποβολή</button>
+  </form>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user || user.Role !== "PROFESSOR") {
+      alert("Μη εξουσιοδοτημένη πρόσβαση");
+      window.location.href = "login.html";
+    }
+
+    document.getElementById("createTopicForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData();
+      formData.append("title", document.getElementById("title").value);
+      formData.append("description", document.getElementById("description").value);
+      formData.append("start", document.getElementById("start").value);
+      formData.append("end", document.getElementById("end").value);
+      formData.append("professorId", user.UserID);
+
+      const fileInput = document.getElementById("pdf");
+      if (fileInput.files.length > 0) {
+        formData.append("pdf", fileInput.files[0]);
+      }
+
+      try {
+        const res = await fetch("http://localhost:3000/thesis", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!res.ok) throw new Error("Αποτυχία δημιουργίας");
+
+        alert("✅ Η διπλωματική καταχωρήθηκε!");
+        window.location.href = "professor-dashboard.html";
+      } catch (err) {
+        alert("⛔ Σφάλμα: " + err.message);
+      }
+    });
+  </script>
+</body>
+</html>
