@@ -1245,8 +1245,8 @@ body.secretary-dashboard::before{
 
 .my-button {
   position: fixed;
-  bottom: 20px;   /* απόσταση από το κάτω μέρος */
-  right: 20px;    /* απόσταση από τη δεξιά πλευρά */
+  bottom: -20px;   /* απόσταση από το κάτω μέρος */
+  right: 2000px;    /* απόσταση από τη δεξιά πλευρά */
   padding: 10px 20px;
   background: #007BFF;
   color: white;
