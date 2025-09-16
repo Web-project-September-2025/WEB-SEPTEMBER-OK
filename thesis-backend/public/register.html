@@ -4,6 +4,92 @@
   <meta charset="UTF-8">
   <title>Δημιουργία Χρήστη</title>
   <link rel="stylesheet" href="styles/main.css">
+  <style>
+    body.custom-landing {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: url("images/background.jpg") no-repeat center center fixed;
+      background-size: cover;
+    }
+
+    .overlay-logo {
+      text-align: left;
+      margin: 20px;
+      position: relative;
+    }
+
+    .overlay-logo img.logo {
+      max-height: 80px;
+    }
+
+    .overlay-logo .top-line {
+      width: 100%;
+      height: 2px;
+      background-color: white;
+      margin-top: 10px;
+    }
+
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      padding: 8px 15px;
+      background: #1976d2;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .register-title {
+      text-align: center;
+      margin-top: 40px;
+      color: white;
+      font-size: 26px;
+    }
+
+    .register-box {
+      width: 350px;
+      margin: 30px auto;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0px 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .register-box label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .register-box input, .register-box select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 6px;
+      border: 1px solid #aaa;
+      font-size: 14px;
+    }
+
+    .register-box button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 12px;
+      background: #1976d2;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .register-box button:hover {
+      background: #125ca1;
+    }
+  </style>
 </head>
 <body class="custom-landing">
 
@@ -16,27 +102,26 @@
 
   <h2 class="register-title">Δημιουργία Χρήστη</h2>
   <div class="register-box">
-  <form id="registerForm">
-    <label for="username">Όνομα:</label>
-    <input type="text" id="username" name="username" required>
+    <form id="registerForm">
+      <label for="username">Όνομα:</label>
+      <input type="text" id="username" name="username" placeholder="Πληκτρολογήστε το όνομα" required>
 
-    <label for="email">Email:</label>
-    <input type="email" id="email" name="email" required>
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" placeholder="example@upatras.gr" required>
 
-    <label for="password">Κωδικός:</label>
-    <input type="password" id="password" name="password" required>
+      <label for="password">Κωδικός:</label>
+      <input type="password" id="password" name="password" placeholder="********" required>
 
-    <label for="role">Ρόλος:</label>
-    <select id="role" name="role" required>
-      <option value="STUDENT">Φοιτητής</option>
-      <option value="PROFESSOR">Διδάσκων</option>
-      <option value="SECRETARY">Γραμματεία</option>
-    </select>
+      <label for="role">Ρόλος:</label>
+      <select id="role" name="role" required>
+        <option value="STUDENT">Φοιτητής</option>
+        <option value="PROFESSOR">Διδάσκων</option>
+        <option value="SECRETARY">Γραμματεία</option>
+      </select>
 
-    <button type="submit">Εγγραφή</button>
-  </form>
-</div>
-
+      <button type="submit">Εγγραφή</button>
+    </form>
+  </div>
 
   <script>
     document.getElementById("registerForm").addEventListener("submit", function(e) {
