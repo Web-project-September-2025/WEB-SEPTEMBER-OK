@@ -109,6 +109,21 @@ app.post("/login", (req, res) => {
 
 app.get("/me", auth, (req, res) => res.json(req.user));
 
+// Εγγραφή νέου χρήστη
+app.post("/register", (req, res) => {
+  const { UserName, Email, Password, Role } = req.body;
+
+  if (!UserName || !Email || !Password || !Role) {
+    return res.status(400).json({ message: "Συμπλήρωσε όλα τα πεδία" });
+  }
+
+  const sql = "INSERT INTO users (UserName, Email, Password, Role) VALUES (?, ?, ?, ?)";
+  db.query(sql, [UserName, Email, Password, Role], (err, result) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json({ message: "Ο χρήστης δημιουργήθηκε επιτυχώς!" });
+  });
+});
+
 // PROFESSOR TOPICS  
 app.get("/professor/topics", auth, requireProfessor, (req, res) => {
   const onlyAssignable = String(req.query.onlyAssignable || "") === "1";
