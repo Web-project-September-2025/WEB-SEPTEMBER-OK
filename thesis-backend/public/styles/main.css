@@ -1243,14 +1243,16 @@ body.secretary-dashboard::before{
 }
 .import-box h2{ margin: 0 0 10px; font-size: 1.05rem; color: var(--muted); }
 
-.my-button {
-  position: fixed;
-  bottom: -20px;   /* απόσταση από το κάτω μέρος */
-  right: 2000px;    /* απόσταση από τη δεξιά πλευρά */
+/*register user button*/
+.create-user-btn {
+  position: fixed;   
+  bottom: 20px;      
+  right: 20px;       
   padding: 10px 20px;
-  background: #007BFF;
+  background: #28a745; /* πράσινο */
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
 }
+
