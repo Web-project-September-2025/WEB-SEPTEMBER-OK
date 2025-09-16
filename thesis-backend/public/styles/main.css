@@ -1256,27 +1256,26 @@ body.secretary-dashboard::before{
   cursor: pointer;
 }
 
-/* Κουμπί επιστροφής πάνω δεξιά */
-.back-btn {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: #dc3545; 
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-/* Κεντρικό κουτί εγγραφής */
+/* Κουτί εγγραφής */
 .register-box {
   width: 350px;
-  margin: 100px auto; 
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
+  margin: 140px auto 0 auto; 
+  background: rgba(255, 255, 255, 0.95); 
+  padding: 30px;
+  border-radius: 12px;
   text-align: left;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+  position: relative;
+  z-index: 2; 
 }
 
+/* Λευκή γραμμή κάτω από το logo */
+.top-line {
+  margin-top: 8px;
+  height: 2px;
+  width: 100%; 
+  background-color: white;
+  opacity: 0.5;
+  z-index: 1;
+  position: relative;
+}
