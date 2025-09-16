@@ -1256,3 +1256,27 @@ body.secretary-dashboard::before{
   cursor: pointer;
 }
 
+/* Κουμπί επιστροφής πάνω δεξιά */
+.back-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: #dc3545; 
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* Κεντρικό κουτί εγγραφής */
+.register-box {
+  width: 350px;
+  margin: 100px auto; 
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: left;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+

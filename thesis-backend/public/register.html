@@ -1,61 +1,73 @@
 <!DOCTYPE html>
 <html lang="el">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Δημιουργία Χρήστη</title>
-  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/main.css" />
 </head>
 <body class="custom-landing">
 
+  <!-- Logo & γραμμή -->
   <div class="overlay-logo">
     <img src="images/logo.png" alt="logo" class="logo" />
     <div class="top-line"></div>
   </div>
 
-  <h2>Δημιουργία Χρήστη</h2>
-  <form id="registerForm">
-    <label for="username">Όνομα:</label>
-    <input type="text" id="username" name="username" required>
+  <!-- Κουμπί επιστροφής πάνω δεξιά -->
+  <button class="back-btn" onclick="window.location.href='index.html'">Επιστροφή</button>
 
-    <label for="email">Email:</label>
-    <input type="email" id="email" name="email" required>
+  <!-- Φόρμα στο κέντρο -->
+  <div class="register-box">
+    <h2>Δημιουργία Νέου Χρήστη</h2>
+    <form id="registerForm">
+      <label for="username">Όνομα Χρήστη:</label>
+      <input type="text" id="username" name="username" required />
 
-    <label for="password">Κωδικός:</label>
-    <input type="password" id="password" name="password" required>
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" required />
 
-    <label for="role">Ρόλος:</label>
-    <select id="role" name="role" required>
-      <option value="STUDENT">Φοιτητής</option>
-      <option value="PROFESSOR">Διδάσκων</option>
-      <option value="SECRETARY">Γραμματεία</option>
-    </select>
+      <label for="password">Κωδικός:</label>
+      <input type="password" id="password" name="password" required />
 
-    <button type="submit">Εγγραφή</button>
-  </form>
+      <label for="role">Ρόλος:</label>
+      <select id="role" name="role" required>
+        <option value="">-- Επιλογή ρόλου --</option>
+        <option value="STUDENT">Φοιτητής</option>
+        <option value="PROFESSOR">Διδάσκων</option>
+      </select>
+
+      <button type="submit" class="btn">Δημιουργία</button>
+    </form>
+  </div>
 
   <script>
-    document.getElementById("registerForm").addEventListener("submit", function(e) {
+    document.getElementById("registerForm").addEventListener("submit", function (e) {
       e.preventDefault();
 
-      const data = {
+      const newUser = {
         UserName: document.getElementById("username").value,
         Email: document.getElementById("email").value,
         Password: document.getElementById("password").value,
-        Role: document.getElementById("role").value
+        Role: document.getElementById("role").value,
       };
 
       fetch("http://localhost:3000/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
+        body: JSON.stringify(newUser),
       })
-      .then(res => res.json())
-      .then(result => {
-        alert("✅ Ο λογαριασμός δημιουργήθηκε!");
-        window.location.href = "index.html"; // πίσω στο login
+      .then((res) => {
+        if (!res.ok) throw new Error("Αποτυχία εγγραφής!");
+        return res.json();
       })
-      .catch(err => alert("⛔ Σφάλμα: " + err.message));
+      .then(() => {
+        alert("✅ Ο χρήστης δημιουργήθηκε!");
+        window.location.href = "index.html"; // επιστροφή στο login
+      })
+      .catch((err) => alert("⛔ Σφάλμα: " + err.message));
     });
   </script>
+
 </body>
 </html>
