@@ -14,7 +14,8 @@
 
   <button class="back-btn" onclick="window.location.href='index.html'">Επιστροφή</button>
 
-  <h2>Δημιουργία Χρήστη</h2>
+  <h2 class="register-title">Δημιουργία Χρήστη</h2>
+  <div class="register-box">
   <form id="registerForm">
     <label for="username">Όνομα:</label>
     <input type="text" id="username" name="username" required>
@@ -34,6 +35,8 @@
 
     <button type="submit">Εγγραφή</button>
   </form>
+</div>
+
 
   <script>
     document.getElementById("registerForm").addEventListener("submit", function(e) {
