@@ -1243,3 +1243,14 @@ body.secretary-dashboard::before{
 }
 .import-box h2{ margin: 0 0 10px; font-size: 1.05rem; color: var(--muted); }
 
+.my-button {
+  position: fixed;
+  bottom: 20px;   /* απόσταση από το κάτω μέρος */
+  right: 20px;    /* απόσταση από τη δεξιά πλευρά */
+  padding: 10px 20px;
+  background: #007BFF;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
