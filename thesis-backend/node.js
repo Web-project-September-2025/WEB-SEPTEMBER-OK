@@ -1526,61 +1526,75 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db"); 
 
-// Πρόσκληση καθηγητή
-router.post("/:id/invite", async (req, res) => {
-  const thesisId = req.params.id;
-  const { professorId } = req.body;
+async function loadProfessors(thesis) {
+  try {
+    const res = await fetch(`${API_BASE}/users/professors`);
+    if (!res.ok) throw new Error("Σφάλμα στο fetch");
+    const professors = await res.json();
+
+    const select = document.getElementById("professorSelect");
+    select.innerHTML = "";
+
+    professors
+      .filter(p => p.UserID !== thesis.ProfessorID) // μη βάλει τον επιβλέποντα
+      .forEach(prof => {
+        const opt = document.createElement("option");
+        opt.value = prof.UserID;
+        opt.textContent = prof.UserName;
+        select.appendChild(opt);
+      });
+  } catch (err) {
+    console.error("Σφάλμα φόρτωσης καθηγητών", err);
+  }
+}
+await loadProfessors(thesis);
+
+document.getElementById("inviteBtn").addEventListener("click", async () => {
+  const select = document.getElementById("professorSelect");
+  const profId = select.value;
+
+  if (!profId) {
+    alert("Επιλέξτε καθηγητή πρώτα!");
+    return;
+  }
 
   try {
-    // Έλεγξε αν υπάρχει ήδη πρόσκληση
-    const [check] = await db.query(
-      "SELECT * FROM committee_requests WHERE ThesisID = ? AND ProfessorID = ?",
-      [thesisId, professorId]
-    );
-    if (check.length > 0) {
-      return res.status(400).json({ message: "Ήδη έχει σταλεί πρόσκληση" });
+    const body = { thesisId: queryThesisId, professorId: profId };
+    const res = await fetch(`${API_BASE}/thesis/invite`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    if (res.ok) {
+      alert("✅ Η πρόσκληση στάλθηκε!");
+      // μπορείς εδώ να κάνεις refresh το requestsList
+    } else {
+      const err = await res.json();
+      alert("⛔ " + err.error);
     }
-
-    // Εισαγωγή νέας πρόσκλησης
-    await db.query(
-      "INSERT INTO committee_requests (ThesisID, ProfessorID, Status) VALUES (?, ?, 'PENDING')",
-      [thesisId, professorId]
-    );
-
-    res.json({ message: "✅ Η πρόσκληση στάλθηκε" });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Σφάλμα server" });
+    alert("Σφάλμα: " + err.message);
   }
 });
 
-// Φέρε όλες τις προσκλήσεις για μια ΔΕ
-router.get("/:id/requests", async (req, res) => {
-  const thesisId = req.params.id;
+// Πρόσκληση καθηγητή σε τριμελή
+app.post("/thesis/invite", async (req, res) => {
+  const { thesisId, professorId } = req.body;
+  if (!thesisId || !professorId) {
+    return res.status(400).json({ error: "Λείπουν δεδομένα" });
+  }
 
   try {
-    const [rows] = await db.query(
-      `SELECT r.*, u.UserName AS ProfessorName
-       FROM committee_requests r
-       JOIN users u ON r.ProfessorID = u.UserID
-       WHERE r.ThesisID = ?`,
-      [thesisId]
-    );
+    const sql = "INSERT INTO ThesisCommitteeInvites (ThesisID, ProfessorID, Status) VALUES (?, ?, 'PENDING')";
+    await db.promise().query(sql, [thesisId, professorId]);
 
-    // Έλεγξε αν 2 καθηγητές έχουν αποδεχθεί
-    const accepted = rows.filter(r => r.Status === "ACCEPTED").length;
-    if (accepted >= 2) {
-      await db.query("UPDATE thesis SET Status = 'ACTIVE' WHERE ThesisID = ?", [thesisId]);
-    }
-
-    res.json(rows);
+    res.json({ success: true });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Σφάλμα server" });
+    res.status(500).json({ error: "Σφάλμα στη βάση" });
   }
 });
-
-module.exports = router;
 
 // Επιστροφή όλων των καθηγητών
 router.get("/users", async (req, res) => {
