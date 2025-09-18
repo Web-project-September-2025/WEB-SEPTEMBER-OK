@@ -13,12 +13,10 @@
     body.student-details::before{
       content:""; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:0;
     }
-
     :root { --below-line-offset: 240px; }
-
     .page{
       max-width: 900px;
-      margin: var(--below-line-offset) auto 40px; 
+      margin: var(--below-line-offset) auto 40px;
       padding: 0 16px;
       position: relative; z-index: 2;
     }
@@ -29,17 +27,15 @@
       backdrop-filter: blur(2px);
       box-shadow: 0 6px 18px rgba(0,0,0,.25);
     }
-    .actions-row{ display:flex; gap:10px; flex-wrap:wrap; }
+    .actions-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
     .muted{ opacity:.85; font-size:13px; }
   </style>
-
-  <!-- Υπολογισμός απόστασης από τη λευκή γραμμή -->
   <script>
     function setBelowLineOffset(){
       const line = document.querySelector('.top-line');
       if(!line) return;
       const rect = line.getBoundingClientRect();
-      const offset = Math.max(200, Math.round(rect.bottom + 32)); 
+      const offset = Math.max(200, Math.round(rect.bottom + 32));
       document.documentElement.style.setProperty('--below-line-offset', offset + 'px');
     }
     window.addEventListener('DOMContentLoaded', setBelowLineOffset);
@@ -47,7 +43,6 @@
   </script>
 </head>
 <body class="student-details">
-  <!-- Logo -->
   <div class="overlay-logo">
     <img src="images/logo.png" alt="logo" class="logo" />
     <div class="top-line"></div>
@@ -59,14 +54,12 @@
     <section class="card">
       <h3 id="t_title">—</h3>
       <div class="muted" id="t_prof">—</div>
-
       <div class="muted" id="t_status">—</div>
       <div class="muted" id="t_dates">—</div>
 
-      <div id="links" class="actions-row" style="margin-top:10px;"></div>
+      <div id="links" class="actions-row"></div>
 
-      <!-- Κουμπί για Examination -->
-      <div id="studentActions" class="actions-row" style="margin-top:14px; display:none;">
+      <div id="studentActions" class="actions-row" style="display:none;">
         <button id="btnExamination" class="btn-small">Καταχώριση Διπλωματικής</button>
       </div>
     </section>
@@ -91,9 +84,8 @@
     function normalizeFileURL(s){
       if(!s) return null;
       if(/^https?:\/\//i.test(s)) return s;
-      if(s.startsWith('/uploads/')) return API_BASE + s;
       if(s.startsWith('/')) return API_BASE + s;
-      return API_BASE + '/uploads/pdfs/' + s; // fallback
+      return API_BASE + '/uploads/pdfs/' + s;
     }
 
     async function loadThesis(){
@@ -107,57 +99,50 @@
           const arr = await r.json();
           thesis = Array.isArray(arr) && arr[0] ? arr[0] : null;
         }
-      }catch(e){ /* ignore */ }
+      }catch(e){}
 
-      if(!thesis){
-        els.title.textContent = 'Δεν βρέθηκε διπλωματική.';
-        return;
-      }
+      if(!thesis){ els.title.textContent = 'Δεν βρέθηκε διπλωματική.'; return; }
 
       els.title.textContent  = thesis.Title || '—';
       els.prof.textContent   = `Επιβλέπων: ${thesis.ProfessorName || '—'}`;
       els.status.textContent = `Κατάσταση: ${thesis.Status}`;
       els.dates.textContent  = `Έναρξη: ${thesis.StartDate || '—'} — Λήξη: ${thesis.EndDate || '—'}`;
 
-      // σύνδεσμοι
       els.links.innerHTML = '';
-      if(thesis.RepositoryLink && thesis.RepositoryLink.trim().toLowerCase() !== 'unknown'){
-        const a = document.createElement('a');
-        // a.href = thesis.RepositoryLink; a.target='_blank'; a.className='btn-small'; a.textContent='Αποθετήριο';
-        els.links.appendChild(a);
-      }
+
       if(thesis.PdfPath){
         const a = document.createElement('a');
-        a.href = normalizeFileURL(thesis.PdfPath); a.target='_blank'; a.className='btn-small'; a.textContent='Συνημμένο PDF θέματος';
+        a.href = normalizeFileURL(thesis.PdfPath);
+        a.target='_blank';
+        a.className='btn-small';
+        a.textContent='Συνημμένο PDF θέματος';
         els.links.appendChild(a);
       }
 
-      // ΕΜΦΑΝΙΣΗ ΚΟΥΜΠΙΩΝ: logged-in STUDENT + «ανήκει» + σωστά statuses
-const allowStatuses = ['ACTIVE','UNDER-EXAMINATION','UNDER-ASSIGNMENT']; 
-const loadedFromMyList = !queryThesisId && me?.Role === 'STUDENT';
-const isOwner = Number(thesis.StudentID) === Number(me?.UserID) || loadedFromMyList;
+      // ➜ Αν είμαι ο φοιτητής της ΔΕ και η κατάσταση είναι PROVISIONAL ή UNDER-ASSIGNMENT,
+      //    δείξε κουμπί για τη σελίδα διαχείρισης προσκλήσεων
+      const loadedFromMyList = !queryThesisId && me?.Role === 'STUDENT';
+      const isOwner = Number(thesis.StudentID) === Number(me?.UserID) || loadedFromMyList;
 
-if (me?.Role === 'STUDENT' && isOwner) {
-  if (thesis.Status === 'UNDER-ASSIGNMENT') {
-    // κουμπί για ανάθεση
-    const btn = document.createElement('a');
-    btn.href = `under-assignment.html?id=${thesis.ThesisID || queryThesisId}`;
-    btn.textContent = 'Ανάθεση Επιτροπής';
-    btn.className = 'btn-small';
-    els.links.appendChild(btn);
-  }
+      if (me?.Role === 'STUDENT' && isOwner) {
+        if (['PROVISIONAL','UNDER-ASSIGNMENT'].includes(thesis.Status)) {
+          const a = document.createElement('a');
+          a.href = `under-assignment.html?thesisId=${thesis.ThesisID || queryThesisId}`;
+          a.className = 'btn-small';
+          a.textContent = (thesis.Status === 'PROVISIONAL') ? 'Πρόσκληση Τριμελούς' : 'Ανάθεση/Τριμελής';
+          els.links.appendChild(a);
+        }
 
-  if (thesis.Status === 'ACTIVE' || thesis.Status === 'UNDER-EXAMINATION') {
-    els.actions.style.display = 'flex';
-    els.btnExam.onclick = () => {
-      const id = thesis.ThesisID || queryThesisId;
-      window.location.href = `examination.html?id=${id}`;
-    };
-  }
-} else {
-  els.actions.style.display = 'none';
-}
-
+        if (['ACTIVE','UNDER-EXAMINATION'].includes(thesis.Status)) {
+          els.actions.style.display = 'flex';
+          els.btnExam.onclick = () => {
+            const id = thesis.ThesisID || queryThesisId;
+            window.location.href = `examination.html?id=${id}`;
+          };
+        }
+      } else {
+        els.actions.style.display = 'none';
+      }
     }
 
     loadThesis();

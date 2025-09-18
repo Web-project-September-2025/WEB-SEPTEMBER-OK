@@ -81,6 +81,14 @@ function requireProfessor(req, res, next) {
   next();
 }
 
+function requireStudent(req, res, next) {
+  if (req.user?.Role !== "STUDENT") {
+    return res.status(403).json({ message: "Μόνο για φοιτητές" });
+  }
+  next();
+}
+
+
 function authFromHeaderOrQuery(req, res, next) {
   let token = null;
   const hdr = req.headers.authorization || "";
@@ -603,6 +611,105 @@ app.post("/import-users", (req, res) => {
     .catch((err) => {
       console.error(err);
       res.status(500).json({ message: "Σφάλμα κατά την εισαγωγή χρηστών." });
+    });
+});
+
+
+//Studen Request to professor
+
+// Student -> invite professor to committee (only when PROVISIONAL)
+app.post("/student/thesis/:id/invite", auth, requireStudent, (req, res) => {
+  const thesisId = Number(req.params.id);
+  const toProfessorId = Number(req.body.professorId);
+  const me = req.user.UserID;
+
+  if (!toProfessorId) return res.status(400).json({ message: "Λείπει professorId." });
+
+  db.query(`SELECT ThesisID, StudentID, ProfessorID, Status FROM thesis WHERE ThesisID=? LIMIT 1`,
+    [thesisId], (err, tRows) => {
+      if (err) return res.status(500).send(err);
+      if (!tRows.length) return res.status(404).json({ message: "Δεν βρέθηκε διπλωματική." });
+      const t = tRows[0];
+
+      if (Number(t.StudentID) !== me)
+        return res.status(403).json({ message: "Μόνο ο/η φοιτητής/τρια της ΔΕ μπορεί να στείλει προσκλήσεις." });
+      if (t.Status !== 'PROVISIONAL')
+        return res.status(409).json({ message: "Προσκλήσεις επιτρέπονται μόνο όταν η ΔΕ είναι PROVISIONAL." });
+      if (Number(toProfessorId) === Number(t.ProfessorID))
+        return res.status(400).json({ message: "Δεν μπορείτε να προσκαλέσετε τον επιβλέποντα." });
+
+      db.query(`SELECT COUNT(*) AS cnt FROM requests WHERE ThesisID=? AND ReqStatus='ACCEPTED'`,
+        [thesisId], (e2, aRows) => {
+          if (e2) return res.status(500).send(e2);
+          if (Number(aRows?.[0]?.cnt || 0) >= 2)
+            return res.status(409).json({ message: "Η τριμελής είναι ήδη πλήρης (2 αποδοχές)." });
+
+          db.query(`SELECT UserID FROM users WHERE UserID=? AND Role='PROFESSOR' LIMIT 1`,
+            [toProfessorId], (e3, pRows) => {
+              if (e3) return res.status(500).send(e3);
+              if (!pRows.length) return res.status(404).json({ message: "Ο παραλήπτης δεν είναι έγκυρος Καθηγητής." });
+
+              const qExists = `SELECT ReqID, ReqStatus FROM requests WHERE ThesisID=? AND ProfessorID=? LIMIT 1`;
+              db.query(qExists, [thesisId, toProfessorId], (e4, exRows) => {
+                if (e4) return res.status(500).send(e4);
+
+                if (!exRows.length) {
+                  db.query(
+                    `INSERT INTO requests (ThesisID, ProfessorID, ReqStatus, CreatedAt) VALUES (?, ?, 'QUEUED', NOW())`,
+                    [thesisId, toProfessorId],
+                    (e5) => {
+                      if (e5) return res.status(500).send(e5);
+                      res.status(201).json({ message: "Η πρόσκληση στάλθηκε." });
+                    }
+                  );
+                  return;
+                }
+
+                const ex = exRows[0];
+                if (ex.ReqStatus === 'REJECTED') {
+                  db.query(
+                    `UPDATE requests SET ReqStatus='QUEUED', CreatedAt=NOW(), AcceptedAt=NULL, RejectedAt=NULL WHERE ReqID=?`,
+                    [ex.ReqID],
+                    (e6) => {
+                      if (e6) return res.status(500).send(e6);
+                      res.json({ message: "Η πρόσκληση επαναστάλθηκε." });
+                    }
+                  );
+                } else {
+                  res.status(409).json({ message: "Υπάρχει ήδη ενεργή πρόσκληση ή έχει γίνει αποδοχή." });
+                }
+              });
+            });
+        });
+    });
+});
+
+// Student -> list committee requests of own thesis (read-only)
+app.get("/student/thesis/:id/requests", auth, requireStudent, (req, res) => {
+  const thesisId = Number(req.params.id);
+  const me = req.user.UserID;
+
+  db.query(`SELECT ThesisID, StudentID, Status FROM thesis WHERE ThesisID=? LIMIT 1`,
+    [thesisId], (e1, rows) => {
+      if (e1) return res.status(500).send(e1);
+      if (!rows.length) return res.status(404).json({ message: "Δεν βρέθηκε διπλωματική." });
+      const t = rows[0];
+      if (Number(t.StudentID) !== me)
+        return res.status(403).json({ message: "Μόνο ο/η φοιτητής/τρια της ΔΕ." });
+
+      const q = `
+        SELECT
+          r.ReqID, r.ProfessorID, r.ReqStatus, r.CreatedAt, r.AcceptedAt, r.RejectedAt,
+          u.UserName AS ProfessorName, u.Email
+        FROM requests r
+        JOIN users u ON u.UserID = r.ProfessorID
+        WHERE r.ThesisID = ?
+        ORDER BY r.ReqID DESC
+      `;
+      db.query(q, [thesisId], (e2, list) => {
+        if (e2) return res.status(500).send(e2);
+        res.json(list);
+      });
     });
 });
 
@@ -1522,14 +1629,6 @@ function getOrCreateExam(thesisId, { examDate, method, location }, cb) {
   });
 }
 
-//  Λήψη όλων των καθηγητών
-app.get("/professors", (req, res) => {
-  const sql = "SELECT UserID, UserName, Email FROM users WHERE Role = 'PROFESSOR'";
-  db.query(sql, (err, results) => {
-    if (err) return res.status(500).send(err);
-    res.json(results);
-  });
-});
 
 //  Λήψη αιτήσεων για συγκεκριμένη διπλωματική
 app.get("/requests/:thesisId", (req, res) => {
