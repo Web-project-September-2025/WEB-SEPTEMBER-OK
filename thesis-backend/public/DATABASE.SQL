@@ -5,9 +5,6 @@ DROP DATABASE IF EXISTS thesisdetails;
 CREATE DATABASE thesisdetails CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE thesisdetails;
 
--- =========================
--- Users
--- =========================
 CREATE TABLE users (
   UserID   INT NOT NULL AUTO_INCREMENT,
   Password VARCHAR(255) NOT NULL DEFAULT 'unknown',
@@ -24,9 +21,6 @@ CREATE TABLE users (
 CREATE INDEX idx_users_role_name ON users (Role, UserName);
 CREATE INDEX idx_users_role_am   ON users (Role, AM);
 
--- =========================
--- Thesis
--- =========================
 CREATE TABLE thesis (
   ThesisID              INT NOT NULL AUTO_INCREMENT,
   Title                 VARCHAR(200) NOT NULL DEFAULT 'unknown',
@@ -56,9 +50,6 @@ CREATE INDEX idx_thesis_professor   ON thesis (ProfessorID);
 CREATE INDEX idx_thesis_student     ON thesis (StudentID);
 CREATE INDEX idx_thesis_prof_status ON thesis (ProfessorID, Status);
 
--- =========================
--- Committee requests
--- =========================
 CREATE TABLE requests (
   ReqID       INT NOT NULL AUTO_INCREMENT,
   ThesisID    INT NOT NULL,
@@ -76,9 +67,6 @@ CREATE INDEX idx_requests_thesis       ON requests (ThesisID);
 CREATE INDEX idx_requests_prof         ON requests (ProfessorID);
 CREATE INDEX idx_requests_prof_status  ON requests (ProfessorID, ReqStatus);
 
--- =========================
--- Student submissions
--- =========================
 CREATE TABLE submissions (
   SubID        INT NOT NULL AUTO_INCREMENT,
   ThesisID     INT NOT NULL,
@@ -89,9 +77,6 @@ CREATE TABLE submissions (
   CONSTRAINT FK_SUB_THESIS FOREIGN KEY (ThesisID) REFERENCES thesis(ThesisID) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- =========================
--- Exam
--- =========================
 CREATE TABLE exam (
   ExamID      INT NOT NULL AUTO_INCREMENT,
   ThesisID    INT NOT NULL,
@@ -105,9 +90,6 @@ CREATE TABLE exam (
   UNIQUE KEY uq_exam_thesis (ThesisID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- =========================
--- Grades (ΣΥΜΒΑΤΟ ΜΕ ΤΟΝ ΚΩΔΙΚΑ NODE)
--- =========================
 CREATE TABLE grade (
   GradeID            INT NOT NULL AUTO_INCREMENT,
   ExamID             INT NOT NULL,
@@ -116,7 +98,7 @@ CREATE TABLE grade (
   ScoreDuration      DECIMAL(4,2) NOT NULL,  -- 0..10 (15%)
   ScoreTextQuality   DECIMAL(4,2) NOT NULL,  -- 0..10 (15%)
   ScorePresentation  DECIMAL(4,2) NOT NULL,  -- 0..10 (10%)
-  Grade              DECIMAL(4,2) NULL,      -- προαιρετικό αποθηκευμένο σύνολο (το Node το υπολογίζει & το αποθηκεύει)
+  Grade              DECIMAL(4,2) NULL,      
   CreatedAt          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UpdatedAt          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (GradeID),
@@ -130,9 +112,6 @@ CREATE TABLE grade (
   CHECK (ScorePresentation BETWEEN 0 AND 10)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- =========================
--- Announcements
--- =========================
 CREATE TABLE announcements (
   AnnouncementID   INT NOT NULL AUTO_INCREMENT,
   ThesisID         INT NOT NULL,
@@ -142,9 +121,6 @@ CREATE TABLE announcements (
   CONSTRAINT FK_ANN_THESIS FOREIGN KEY (ThesisID) REFERENCES thesis(ThesisID) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- =========================
--- Private notes per professor
--- =========================
 CREATE TABLE thesis_notes (
   NoteID      INT NOT NULL AUTO_INCREMENT,
   ThesisID    INT NOT NULL,
@@ -157,9 +133,6 @@ CREATE TABLE thesis_notes (
   INDEX idx_tn_owner (ProfessorID, ThesisID, CreatedAt)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- =========================
--- Seed data
--- =========================
 -- Professors
 INSERT INTO users (UserID, Password, UserName, Role, Adress, Phone, Email, AM) VALUES
 (2001,'2002','Stef','PROFESSOR','Yfestou 4',NULL,'Stef@ceid.com',NULL),
@@ -209,35 +182,35 @@ INSERT INTO exam (ExamID, ThesisID, ExamDate, ExamMethod, Location, ExamGrade, G
 
 -- Notes sample
 INSERT INTO thesis_notes (ThesisID, ProfessorID, Body) VALUES
-  (1,2001,'Αρχική σημείωση για πρόοδο.'),
-  (1,2001,'Έλεγχος κεφαλαίου 2 την επόμενη εβδομάδα.');
+  (1,2001,'Initial progress note.'),
+  (1,2001,'Chapter 2 review next week.');
 
 -- Extra Theses (5..10)
 INSERT INTO thesis
   (ThesisID, Title, Description, StudentID, ProfessorID, Status, StartDate, ActiveSince, EndDate, Progress, RepositoryLink, PdfPath, AssignmentConfirmed)
 VALUES
-(5,'Ανάπτυξη Συστήματος Διαχείρισης Εργασιών με Web Τεχνολογίες',
- 'Υλοποίηση web εφαρμογής με Node.js, Express και React για την οργάνωση και παρακολούθηση εργασιών.',
+(5,'Development of a Task Management System with Web Technologies',
+'Implementation of a web application with Node.js, Express and React for organizing and monitoring tasks.',
  1002,3001,'ACTIVE','2025-02-01','2025-02-15','2025-10-01',65,'http://repo.uni/thesis5',NULL,1),
 
-(6,'Αξιολόγηση Αλγορίθμων Μηχανικής Μάθησης για Ανίχνευση Κακόβουλου Λογισμικού',
- 'Σύγκριση Random Forest, SVM και Deep Learning για την ταξινόμηση εκτελέσιμων αρχείων σε κακόβουλα/καθαρά.',
+(6,'Evaluation of Machine Learning Algorithms for Malware Detection',
+'Comparison of Random Forest, SVM and Deep Learning for classifying executable files into malicious/clean.',
  1006,3002,'CANCELLED','2025-01-10','2025-01-25','2025-05-30',15,'http://repo.uni/thesis6',NULL,0),
 
-(7,'Σχεδίαση Βάσης Δεδομένων για Πανεπιστημιακό Σύστημα Εξέτασης',
- 'Δημιουργία και βελτιστοποίηση σχήματος βάσης δεδομένων για την υποστήριξη θεμάτων, εξετάσεων και αξιολόγησης.',
+(7,'Database Design for a University Examination System',
+'Creation and optimization of a database schema to support subjects, examinations and assessment.',
  1009,3003,'UNDER-EXAMINATION','2025-03-01','2025-03-20','2025-12-20',95,'http://repo.uni/thesis7',NULL,1),
 
-(8,'Ανάπτυξη Mobile Εφαρμογής για Έξυπνη Πόλη',
- 'Εφαρμογή Android που συνδέεται με IoT αισθητήρες για παροχή πληροφοριών κυκλοφορίας και ρύπανσης.',
+(8,'Mobile Application Development for Smart City',
+'Android application connected to IoT sensors to provide traffic and pollution information.',
  1010,3004,'UNDER-EXAMINATION','2025-02-10','2025-02-25','2025-12-22',90,'http://repo.uni/thesis8',NULL,1),
 
-(9,'Αυτόματο Σύστημα Αναγνώρισης Προσώπου με Χρήση Νευρωνικών Δικτύων',
- 'Χρήση CNN για ανίχνευση/αναγνώριση προσώπων.',
+(9,'Automatic Face Recognition System Using Neural Networks',
+'Using CNN for face detection/recognition.',
  1005,3005,'FINISHED','2024-10-01','2024-11-01','2024-12-10',100,'http://repo.uni/thesis9','/uploads/thesis9.pdf',1),
 
-(10,'Ανάπτυξη RESTful API για Διαμοιρασμό Αρχείων',
- 'REST API με Node.js/Express για ασφαλή διαμοιρασμό με JWT.',
+(10,'Developing a RESTful API for File Sharing',
+'REST API with Node.js/Express for secure sharing with JWT.',
  NULL,3006,'UNDER-ASSIGNMENT','2025-05-01',NULL,'2026-05-01',0,'http://repo.uni/thesis10',NULL,0);
 
 -- Submissions sample
@@ -262,6 +235,6 @@ INSERT INTO grade (ExamID, ProfessorID, ScoreWorkQuality, ScoreDuration, ScoreTe
 
 -- Announcements sample
 INSERT INTO announcements (ThesisID, PresentationDate, Description) VALUES
-(7,'2025-12-20','Παρουσίαση: "Σχεδίαση ΒΔ για Σύστημα Εξέτασης" — Αίθουσα/Zoom'),
-(8,'2025-12-22','Παρουσίαση: "Έξυπνη Πόλη" — Αίθουσα B'),
-(9,'2024-12-10','Παρουσίαση: "Αναγνώριση Προσώπου" — Αίθουσα C');
+(7,'2025-12-20','Presentation: "Database Design for Examination System" — Room/Zoom'),
+(8,'2025-12-22','Presentation: "Smart City" — Room B'),
+(9,'2024-12-10','Presentation: "Facial Recognition" — Room C');
