@@ -123,7 +123,7 @@
       els.links.innerHTML = '';
       if(thesis.RepositoryLink && thesis.RepositoryLink.trim().toLowerCase() !== 'unknown'){
         const a = document.createElement('a');
-        a.href = thesis.RepositoryLink; a.target='_blank'; a.className='btn-small'; a.textContent='Αποθετήριο';
+        // a.href = thesis.RepositoryLink; a.target='_blank'; a.className='btn-small'; a.textContent='Αποθετήριο';
         els.links.appendChild(a);
       }
       if(thesis.PdfPath){
