@@ -2,83 +2,154 @@
 <html lang="el">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Λεπτομέρειες Διπλωματικής</title>
   <link rel="stylesheet" href="styles/main.css" />
-</head>
-<body class="student-dashboard">
+  <style>
+    html, body { height: 100%; }
+    body.student-details{
+      background:url('images/student.png') center/cover no-repeat fixed;
+    }
+    body.student-details::before{
+      content:""; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:0;
+    }
 
+    /* δυναμικό κενό κάτω από τη λευκή γραμμή */
+    :root { --below-line-offset: 240px; }
+
+    .page{
+      max-width: 900px;
+      margin: var(--below-line-offset) auto 40px; /* κάτω από τη γραμμή & κεντραρισμένο */
+      padding: 0 16px;
+      position: relative; z-index: 2;
+    }
+    .card{
+      background: rgba(0,0,0,.45);
+      border-radius: 14px;
+      padding: 18px;
+      backdrop-filter: blur(2px);
+      box-shadow: 0 6px 18px rgba(0,0,0,.25);
+    }
+    .actions-row{ display:flex; gap:10px; flex-wrap:wrap; }
+    .muted{ opacity:.85; font-size:13px; }
+  </style>
+
+  <!-- Υπολογισμός απόστασης από τη λευκή γραμμή -->
+  <script>
+    function setBelowLineOffset(){
+      const line = document.querySelector('.top-line');
+      if(!line) return;
+      const rect = line.getBoundingClientRect();
+      const offset = Math.max(200, Math.round(rect.bottom + 32)); // 32px «αέρας» κάτω απ’ τη γραμμή
+      document.documentElement.style.setProperty('--below-line-offset', offset + 'px');
+    }
+    window.addEventListener('DOMContentLoaded', setBelowLineOffset);
+    window.addEventListener('resize', setBelowLineOffset);
+  </script>
+</head>
+<body class="student-details">
+  <!-- Logo & λευκή γραμμή (υπάρχει στο main.css) -->
   <div class="overlay-logo">
     <img src="images/logo.png" alt="logo" class="logo" />
     <div class="top-line"></div>
   </div>
 
-  <div class="top-right-title">
-    <h2>Λεπτομέρειες Διπλωματικής</h2>
+  <div class="top-right-title"><h2>Λεπτομέρειες Διπλωματικής</h2></div>
+
+  <div class="page">
+    <section class="card">
+      <h3 id="t_title">—</h3>
+      <div class="muted" id="t_prof">—</div>
+      <!-- Ζητήθηκε να ΜΗΝ εμφανίζεται το «Φοιτητής/τρια», οπότε αφαιρέθηκε -->
+      <div class="muted" id="t_status">—</div>
+      <div class="muted" id="t_dates">—</div>
+
+      <div id="links" class="actions-row" style="margin-top:10px;"></div>
+
+      <!-- Κουμπί για Examination -->
+      <div id="studentActions" class="actions-row" style="margin-top:14px; display:none;">
+        <button id="btnExamination" class="btn-small">Καταχώριση Διπλωματικής</button>
+      </div>
+    </section>
   </div>
-
-  <div class="thesis-details-box">
-    <h3 id="thesisTitle"></h3>
-    <p><strong>Περιγραφή:</strong> <span id="thesisDescription"></span></p>
-    <p><strong>Διδάσκων:</strong> <span id="thesisProfessor"></span></p>
-    <p><strong>Έναρξη:</strong> <span id="startDate"></span></p>
-    <p><strong>Λήξη:</strong> <span id="endDate"></span></p>
-    <p><strong>Πρόοδος:</strong> <span id="progress"></span>%</p>
-    <p><strong>Repository Link:</strong> <span id="repo"></span></p>
-    <p id="pdfRow" style="display:none;"><strong>PDF:</strong> <a id="pdfLink" href="#" target="_blank" rel="noopener">Άνοιγμα</a></p>
-  </div>
-
-  <div id="actionButtons" class="assignmentBtn"></div>
-
-  <button class="logout-btn" onclick="window.history.back()">Επιστροφή⬅</button>
 
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const params = new URLSearchParams(window.location.search);
-      const thesisId = params.get("id");
+    const API_BASE = 'http://localhost:3000';
+    const me = JSON.parse(localStorage.getItem('user') || 'null');
+    const params = new URLSearchParams(location.search);
+    const queryThesisId = Number(params.get('id') || 0) || null;
 
-      fetch(`http://localhost:3000/thesis/${thesisId}`)
-        .then((res) => res.json())
-        .then((thesis) => {
-          document.getElementById("thesisTitle").textContent = thesis.Title;
-          document.getElementById("thesisDescription").textContent = thesis.Description;
-          document.getElementById("thesisProfessor").textContent = thesis.ProfessorName || "—";
-          document.getElementById("startDate").textContent = thesis.StartDate || "—";
-          document.getElementById("endDate").textContent = thesis.EndDate || "—";
-          document.getElementById("progress").textContent = thesis.Progress ?? "0";
-          document.getElementById("repo").textContent = thesis.RepositoryLink || "—";
+    const els = {
+      title:  document.getElementById('t_title'),
+      prof:   document.getElementById('t_prof'),
+      status: document.getElementById('t_status'),
+      dates:  document.getElementById('t_dates'),
+      links:  document.getElementById('links'),
+      actions:document.getElementById('studentActions'),
+      btnExam:document.getElementById('btnExamination')
+    };
 
-          if (thesis.PdfPath) {
-            const pdfRow = document.getElementById("pdfRow");
-            const pdfLink = document.getElementById("pdfLink");
-            pdfLink.href = `http://localhost:3000${thesis.PdfPath}`;
-            pdfRow.style.display = "block";
-          }
+    function normalizeFileURL(s){
+      if(!s) return null;
+      if(/^https?:\/\//i.test(s)) return s;
+      if(s.startsWith('/uploads/')) return API_BASE + s;
+      if(s.startsWith('/')) return API_BASE + s;
+      return API_BASE + '/uploads/pdfs/' + s; // fallback
+    }
 
-          if (thesis.Status === "UNDER-EXAMINATION") {
-            const button = document.createElement("a");
-            button.href = `examination.html?id=${thesis.ThesisID}`;
-            button.textContent = "Καταχώρηση Εξέτασης";
-            button.className = "btn-small";
-            button.id = "examBtn";
-            document.getElementById("actionButtons").appendChild(button);
-          }
+    async function loadThesis(){
+      let thesis = null;
+      try{
+        if(queryThesisId){
+          const r = await fetch(`${API_BASE}/thesis/${queryThesisId}`);
+          if(r.ok) thesis = await r.json();
+        }else if(me?.Role === 'STUDENT'){
+          const r = await fetch(`${API_BASE}/thesis/student/${me.UserID}`);
+          const arr = await r.json();
+          thesis = Array.isArray(arr) && arr[0] ? arr[0] : null;
+        }
+      }catch(e){ /* ignore */ }
 
-          if (thesis.Status === "UNDER-ASSIGNMENT") {
-            const button = document.createElement("a");
-            button.href = `under-assignment.html?id=${thesis.ThesisID}`;
-            button.textContent = "Ανάθεση Επιτροπής";
-            button.className = "btn-small";
-            button.id = "assignmentBtn";
-            document.getElementById("actionButtons").appendChild(button);
-          }
-        })
-        .catch((err) => {
-          alert("⛔ Σφάλμα στην ανάκτηση δεδομένων");
-          console.error(err);
-        });
-    });
+      if(!thesis){
+        els.title.textContent = 'Δεν βρέθηκε διπλωματική.';
+        return;
+      }
+
+      els.title.textContent  = thesis.Title || '—';
+      els.prof.textContent   = `Επιβλέπων: ${thesis.ProfessorName || '—'}`;
+      els.status.textContent = `Κατάσταση: ${thesis.Status}`;
+      els.dates.textContent  = `Έναρξη: ${thesis.StartDate || '—'} — Λήξη: ${thesis.EndDate || '—'}`;
+
+      // σύνδεσμοι
+      els.links.innerHTML = '';
+      if(thesis.RepositoryLink && thesis.RepositoryLink.trim().toLowerCase() !== 'unknown'){
+        const a = document.createElement('a');
+        a.href = thesis.RepositoryLink; a.target='_blank'; a.className='btn-small'; a.textContent='Αποθετήριο';
+        els.links.appendChild(a);
+      }
+      if(thesis.PdfPath){
+        const a = document.createElement('a');
+        a.href = normalizeFileURL(thesis.PdfPath); a.target='_blank'; a.className='btn-small'; a.textContent='Συνημμένο PDF θέματος';
+        els.links.appendChild(a);
+      }
+
+      // ΕΜΦΑΝΙΣΗ ΚΟΥΜΠΙΟΥ: logged-in STUDENT + «ανήκει» + σωστά statuses
+      const allowStatuses = ['ACTIVE','UNDER-EXAMINATION']; // πρόσθεσε 'PROVISIONAL' αν το θες
+      const loadedFromMyList = !queryThesisId && me?.Role === 'STUDENT';
+      const isOwner = Number(thesis.StudentID) === Number(me?.UserID) || loadedFromMyList;
+
+      if(me?.Role === 'STUDENT' && isOwner && allowStatuses.includes(thesis.Status)){
+        els.actions.style.display = 'flex';
+        els.btnExam.onclick = () => {
+          const id = thesis.ThesisID || queryThesisId;
+          window.location.href = `examination.html?id=${id}`;
+        };
+      }else{
+        els.actions.style.display = 'none';
+      }
+    }
+
+    loadThesis();
   </script>
-
 </body>
 </html>
