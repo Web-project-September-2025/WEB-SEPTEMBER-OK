@@ -1649,6 +1649,20 @@ app.put("/user/:id", (req, res) => {
     );
   });
 });
+// Εγγραφή νέου χρήστη
+app.post("/register", (req, res) => {
+  const { UserName, Email, Password, Role } = req.body;
+
+  if (!UserName || !Email || !Password || !Role) {
+    return res.status(400).json({ message: "Συμπλήρωσε όλα τα πεδία" });
+  }
+
+  const sql = "INSERT INTO users (UserName, Email, Password, Role) VALUES (?, ?, ?, ?)";
+  db.query(sql, [UserName, Email, Password, Role], (err, result) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json({ message: "Ο χρήστης δημιουργήθηκε επιτυχώς!" });
+  });
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
