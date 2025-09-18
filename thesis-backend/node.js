@@ -1522,6 +1522,66 @@ function getOrCreateExam(thesisId, { examDate, method, location }, cb) {
   });
 }
 
+const express = require("express");
+const router = express.Router();
+const db = require("../db"); 
+
+// Πρόσκληση καθηγητή
+router.post("/:id/invite", async (req, res) => {
+  const thesisId = req.params.id;
+  const { professorId } = req.body;
+
+  try {
+    // Έλεγξε αν υπάρχει ήδη πρόσκληση
+    const [check] = await db.query(
+      "SELECT * FROM committee_requests WHERE ThesisID = ? AND ProfessorID = ?",
+      [thesisId, professorId]
+    );
+    if (check.length > 0) {
+      return res.status(400).json({ message: "Ήδη έχει σταλεί πρόσκληση" });
+    }
+
+    // Εισαγωγή νέας πρόσκλησης
+    await db.query(
+      "INSERT INTO committee_requests (ThesisID, ProfessorID, Status) VALUES (?, ?, 'PENDING')",
+      [thesisId, professorId]
+    );
+
+    res.json({ message: "✅ Η πρόσκληση στάλθηκε" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Σφάλμα server" });
+  }
+});
+
+// Φέρε όλες τις προσκλήσεις για μια ΔΕ
+router.get("/:id/requests", async (req, res) => {
+  const thesisId = req.params.id;
+
+  try {
+    const [rows] = await db.query(
+      `SELECT r.*, u.UserName AS ProfessorName
+       FROM committee_requests r
+       JOIN users u ON r.ProfessorID = u.UserID
+       WHERE r.ThesisID = ?`,
+      [thesisId]
+    );
+
+    // Έλεγξε αν 2 καθηγητές έχουν αποδεχθεί
+    const accepted = rows.filter(r => r.Status === "ACCEPTED").length;
+    if (accepted >= 2) {
+      await db.query("UPDATE thesis SET Status = 'ACTIVE' WHERE ThesisID = ?", [thesisId]);
+    }
+
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Σφάλμα server" });
+  }
+});
+
+module.exports = router;
+
 // Καταχώριση στοιχείων "Υπό Εξέταση" από φοιτητή
 app.post("/examination", upload.single("file"), (req, res) => {
   const {
