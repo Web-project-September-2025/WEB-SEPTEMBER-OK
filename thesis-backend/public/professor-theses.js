@@ -179,16 +179,16 @@ function fillDetails({ thesis, committee, timeline, finalGrade, latestSubmission
 
   // links
   d_links.innerHTML = '';
-  // if (thesis.RepositoryLink && thesis.RepositoryLink.trim().toLowerCase() !== 'unknown') {
-  //   const a = document.createElement('a');
-  //   a.href = thesis.RepositoryLink; a.target='_blank'; a.className='btn-small'; a.textContent='Αποθετήριο';
-  //   d_links.appendChild(a);
-  // }
-  // if (latestSubmission?.FileURL) {
-  //   const a = document.createElement('a');
-  //   a.href = normalizeFileURL(latestSubmission.FileURL);
-  //   a.target = '_blank'; a.className = 'btn-small'; a.textContent = 'Τελευταίο Υποβληθέν Αρχείο';
-  //   d_links.appendChild(a);
+  if (thesis.RepositoryLink && thesis.RepositoryLink.trim().toLowerCase() !== 'unknown') {
+    const a = document.createElement('a');
+    a.href = thesis.RepositoryLink; a.target='_blank'; a.className='btn-small'; a.textContent='Αποθετήριο';
+    d_links.appendChild(a);
+  }
+  if (latestSubmission?.FileURL) {
+    const a = document.createElement('a');
+    a.href = normalizeFileURL(latestSubmission.FileURL);
+    a.target = '_blank'; a.className = 'btn-small'; a.textContent = 'Τελευταίο Υποβληθέν Αρχείο';
+    d_links.appendChild(a);
   }
   if (!d_links.children.length) {
     const span = document.createElement('span'); span.textContent = '—'; d_links.appendChild(span);
