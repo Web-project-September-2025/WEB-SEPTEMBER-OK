@@ -166,7 +166,7 @@ INSERT INTO thesis
   (ThesisID, Title, Description, StudentID, ProfessorID, Status, StartDate, ActiveSince, EndDate, Progress, RepositoryLink, PdfPath, ProtocolNumber, CancellationGSNumber, CancellationYear, CancellationReason, IsCancelled, AssignmentConfirmed)
 VALUES
   (1,'First title','Demo active',        1008,2001,'ACTIVE',            '2025-06-20','2025-06-20','2026-05-20',40,'unknown',NULL,NULL,NULL,NULL,NULL,0,1),
-  (2,'Second title','No student yet',    NULL,2001,'UNDER-ASSIGNMENT',  '2025-05-25',NULL,'2026-06-15',10,'unknown',NULL,NULL,NULL,NULL,NULL,0,0),
+  (2,'Second title','No student yet',    1011,2001,'UNDER-ASSIGNMENT',  '2025-05-25',NULL,'2026-06-15',10,'unknown',NULL,NULL,NULL,NULL,NULL,0,0),
   (3,'Third title','Under examination',  1001,2001,'UNDER-EXAMINATION', '2025-03-22','2025-03-22','2026-01-10',98,'unknown',NULL,NULL,NULL,NULL,NULL,0,1),
   (4,'Provisional sample','Needs 2 acc', 1007,2001,'PROVISIONAL',       '2025-04-10',NULL,'2026-04-09',50,'unknown',NULL,NULL,NULL,NULL,NULL,0,0);
 
