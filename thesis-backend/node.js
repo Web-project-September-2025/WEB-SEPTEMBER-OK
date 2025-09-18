@@ -522,15 +522,22 @@ app.put("/thesis/:id/cancel", auth, requireProfessor, (req, res) => {
 
 app.get("/thesis/:id/finishable", (req, res) => {
   const thesisId = req.params.id;
-  const qGrades = `
+
+  const qCount = `
     SELECT COUNT(*) AS cnt
+    FROM exam e
+    JOIN grade g ON g.ExamID = e.ExamID
+    WHERE e.ThesisID = ?
+  `;
+  const qAvg = `
+    SELECT AVG(g.Grade) AS avgGrade
     FROM exam e
     JOIN grade g ON g.ExamID = e.ExamID
     WHERE e.ThesisID = ?
   `;
   const qRepo = `SELECT RepositoryLink FROM thesis WHERE ThesisID = ? LIMIT 1`;
 
-  db.query(qGrades, [thesisId], (err, rowsG) => {
+  db.query(qCount, [thesisId], (err, rowsG) => {
     if (err) { res.status(500).send(err); return; }
     const hasGrades = (rowsG?.[0]?.cnt || 0) > 0;
 
@@ -538,7 +545,13 @@ app.get("/thesis/:id/finishable", (req, res) => {
       if (err2) { res.status(500).send(err2); return; }
       const repo = rowsR?.[0]?.RepositoryLink || "";
       const hasRepositoryLink = !!repo && repo.trim() !== "" && repo.trim().toLowerCase() !== "unknown";
-      res.json({ hasGrades, hasRepositoryLink, ok: hasGrades && hasRepositoryLink });
+
+      db.query(qAvg, [thesisId], (err3, rowsA) => {
+        if (err3) { res.status(500).send(err3); return; }
+        const finalGrade = rowsA?.[0]?.avgGrade != null ? Number(rowsA[0].avgGrade) : null;
+
+        res.json({ hasGrades, hasRepositoryLink, ok: hasGrades && hasRepositoryLink, finalGrade });
+      });
     });
   });
 });

@@ -5,6 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard Φοιτητή</title>
   <link rel="stylesheet" href="styles/main.css" />
+  <style>
+    .grade-pill{
+      display:inline-block;
+      margin-right:10px;
+      padding:6px 10px;
+      border-radius:10px;
+      background: rgba(255,255,255,.12);
+      color:#fff;
+      font-size:14px;
+      vertical-align:middle;
+      min-width:110px;
+      text-align:center;
+    }
+  </style>
 </head>
 <body class="student-dashboard">
 
@@ -46,6 +60,8 @@
   </div>
 
   <script>
+    const API_BASE = "http://localhost:3000";
+
     document.addEventListener("DOMContentLoaded", function () {
       const user = JSON.parse(localStorage.getItem("user"));
       if (!user || user.Role !== "STUDENT") {
@@ -54,8 +70,8 @@
         return;
       }
 
-      // Κάνε fetch τις διπλωματικές του φοιτητή
-      fetch(`http://localhost:3000/thesis/student/${user.UserID}`)
+      // Φόρτωσε διπλωματικές φοιτητή
+      fetch(`${API_BASE}/thesis/student/${user.UserID}`)
         .then((res) => res.json())
         .then((theses) => {
           const container = document.getElementById("thesis-container");
@@ -66,17 +82,46 @@
           }
 
           theses.forEach((thesis) => {
-            const item = document.createElement("div");
-            item.classList.add("thesis-row");
-            item.innerHTML = `
+            const row = document.createElement("div");
+            row.classList.add("thesis-row");
+
+            // κελί ενεργειών (βαθμός + κουμπί)
+            const actionsCell = document.createElement("div");
+            const gradeSpan = document.createElement("span");
+            gradeSpan.className = "grade-pill";
+            gradeSpan.textContent = ""; // θα ενημερωθεί αν υπάρχει βαθμός
+            actionsCell.appendChild(gradeSpan);
+
+            const a = document.createElement("a");
+            a.href = `thesis-details.html?id=${thesis.ThesisID}`;
+            a.className = "btn-small";
+            a.textContent = "Προβολή";
+            actionsCell.appendChild(a);
+
+            row.innerHTML = `
               <div><strong>${thesis.Title}</strong></div>
               <div>${thesis.ProfessorName || "—"}</div>
               <div>${thesis.Status}</div>
-              <div>
-                <a href="thesis-details.html?id=${thesis.ThesisID}" class="btn-small">Προβολή</a>
-              </div>
             `;
-            container.appendChild(item);
+            row.appendChild(actionsCell);
+            container.appendChild(row);
+
+            // Αν είναι UNDER-EXAMINATION ή FINISHED, δείξε συνολικό βαθμό (αν υπάρχει)
+            if (["UNDER-EXAMINATION","FINISHED"].includes(thesis.Status)) {
+              fetch(`${API_BASE}/thesis/${thesis.ThesisID}/finishable`)
+                .then(r => r.json())
+                .then(info => {
+                  if (info && info.hasGrades && typeof info.finalGrade === "number") {
+                    gradeSpan.textContent = `Βαθμός: ${info.finalGrade.toFixed(2)}`;
+                  } else {
+                    gradeSpan.textContent = "Βαθμός: —";
+                  }
+                })
+                .catch(() => { gradeSpan.textContent = "Βαθμός: —"; });
+            } else {
+              gradeSpan.textContent = ""; // κρύψτο όταν δεν έχει νόημα
+              gradeSpan.style.display = "none";
+            }
           });
         })
         .catch((err) => {
@@ -84,19 +129,16 @@
           alert("Σφάλμα κατά την ανάκτηση διπλωματικών.");
         });
 
-      // Φόρτωσε στοιχεία προφίλ (διεύθυνση, email, τηλέφωνο)
-      fetch(`http://localhost:3000/user/${user.UserID}`)
+      // Στοιχεία προφίλ
+      fetch(`${API_BASE}/user/${user.UserID}`)
         .then(res => res.json())
         .then(data => {
           document.getElementById("profileAddress").textContent = data.Adress || "-";
-          document.getElementById("profileEmail").textContent = data.Email || "-";
-          document.getElementById("profileMobile").textContent = data.Phone || "-";
+          document.getElementById("profileEmail").textContent  = data.Email  || "-";
+          document.getElementById("profileMobile").textContent = data.Phone  || "-";
         })
-        .catch(err => {
-          console.error("Σφάλμα προφίλ:", err);
-        });
+        .catch(err => console.error("Σφάλμα προφίλ:", err));
     });
   </script>
-
 </body>
 </html>
