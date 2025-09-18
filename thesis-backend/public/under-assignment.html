@@ -34,6 +34,7 @@
 
   <script>
   const user = JSON.parse(localStorage.getItem("user"));
+  let thesis = null;
 
   document.addEventListener("DOMContentLoaded", () => {
     if (!user || user.Role !== "STUDENT") {
@@ -42,11 +43,11 @@
       return;
     }
 
-    // Φέρε τη ΔΕ του φοιτητή που είναι UNDER-ASSIGNMENT (υπό ανάθεση)
+    // Φέρε τη ΔΕ που είναι UNDER-ASSIGNMENT
     fetch(`http://localhost:3000/thesis/student/${user.UserID}`)
       .then(res => res.json())
       .then(theses => {
-        const thesis = theses.find(t => t.Status === "UNDER-ASSIGNMENT");
+        thesis = theses.find(t => t.Status === "UNDER-ASSIGNMENT");
         if (!thesis) {
           alert("Δεν βρέθηκε διπλωματική σε κατάσταση 'Υπό Ανάθεση'");
           return;
@@ -55,20 +56,67 @@
         document.getElementById("thesisTitle").textContent = thesis.Title;
         document.getElementById("thesisDescription").textContent = thesis.Description;
 
-        // Ενημέρωση χρήστη, την τριμελή την ορίζει ο επιβλέπων
-        const area = document.querySelector(".thesis-details-section");
-        const info = document.createElement("div");
-        info.className = "muted";
-        info.style.marginTop = "12px";
-        info.textContent = "Η ανάθεση τριμελούς πραγματοποιείται από τον επιβλέποντα. Θα ειδοποιηθείτε όταν ολοκληρωθεί.";
-        area.appendChild(info);
+        loadProfessors();
+        loadRequests();
       })
       .catch(err => {
         console.error(err);
         alert("Σφάλμα φόρτωσης.");
       });
   });
-</script>
 
+  // Φέρε όλους τους διαθέσιμους καθηγητές για επιλογή
+  function loadProfessors() {
+    fetch("http://localhost:3000/users/professors")
+      .then(res => res.json())
+      .then(profs => {
+        const select = document.getElementById("professorSelect");
+        select.innerHTML = "";
+        profs.forEach(p => {
+          const opt = document.createElement("option");
+          opt.value = p.UserID;
+          opt.textContent = `${p.UserName} (${p.Email})`;
+          select.appendChild(opt);
+        });
+      });
+  }
+
+  // Πρόσκληση νέου μέλους
+  document.getElementById("inviteBtn").addEventListener("click", () => {
+    const profId = document.getElementById("professorSelect").value;
+    if (!profId) return;
+
+    fetch(`http://localhost:3000/thesis/${thesis.ThesisID}/invite`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ professorId: profId })
+    })
+    .then(res => res.json())
+    .then(data => {
+      alert("✅ Στάλθηκε πρόσκληση!");
+      loadRequests();
+    })
+    .catch(err => {
+      console.error(err);
+      alert("⛔ Σφάλμα αποστολής πρόσκλησης");
+    });
+  });
+
+  // Φέρε τις τρέχουσες αιτήσεις
+  function loadRequests() {
+    fetch(`http://localhost:3000/thesis/${thesis.ThesisID}/requests`)
+      .then(res => res.json())
+      .then(requests => {
+        const ul = document.getElementById("requestsList");
+        ul.innerHTML = "";
+        requests.forEach(r => {
+          const li = document.createElement("li");
+          li.textContent = `${r.ProfessorName} - ${r.Status}`;
+          ul.appendChild(li);
+        });
+      });
+  }
+  </script>
 </body>
 </html>
+
