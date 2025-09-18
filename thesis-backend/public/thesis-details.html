@@ -132,20 +132,32 @@
         els.links.appendChild(a);
       }
 
-      // ΕΜΦΑΝΙΣΗ ΚΟΥΜΠΙΟΥ: logged-in STUDENT + «ανήκει» + σωστά statuses
-      const allowStatuses = ['ACTIVE','UNDER-EXAMINATION']; 
-      const loadedFromMyList = !queryThesisId && me?.Role === 'STUDENT';
-      const isOwner = Number(thesis.StudentID) === Number(me?.UserID) || loadedFromMyList;
+      // ΕΜΦΑΝΙΣΗ ΚΟΥΜΠΙΩΝ: logged-in STUDENT + «ανήκει» + σωστά statuses
+const allowStatuses = ['ACTIVE','UNDER-EXAMINATION','UNDER-ASSIGNMENT']; 
+const loadedFromMyList = !queryThesisId && me?.Role === 'STUDENT';
+const isOwner = Number(thesis.StudentID) === Number(me?.UserID) || loadedFromMyList;
 
-      if(me?.Role === 'STUDENT' && isOwner && allowStatuses.includes(thesis.Status)){
-        els.actions.style.display = 'flex';
-        els.btnExam.onclick = () => {
-          const id = thesis.ThesisID || queryThesisId;
-          window.location.href = `examination.html?id=${id}`;
-        };
-      }else{
-        els.actions.style.display = 'none';
-      }
+if (me?.Role === 'STUDENT' && isOwner) {
+  if (thesis.Status === 'UNDER-ASSIGNMENT') {
+    // κουμπί για ανάθεση
+    const btn = document.createElement('a');
+    btn.href = `under-assignment.html?id=${thesis.ThesisID || queryThesisId}`;
+    btn.textContent = 'Ανάθεση Επιτροπής';
+    btn.className = 'btn-small';
+    els.links.appendChild(btn);
+  }
+
+  if (thesis.Status === 'ACTIVE' || thesis.Status === 'UNDER-EXAMINATION') {
+    els.actions.style.display = 'flex';
+    els.btnExam.onclick = () => {
+      const id = thesis.ThesisID || queryThesisId;
+      window.location.href = `examination.html?id=${id}`;
+    };
+  }
+} else {
+  els.actions.style.display = 'none';
+}
+
     }
 
     loadThesis();
