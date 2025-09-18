@@ -1776,6 +1776,26 @@ app.post("/register", (req, res) => {
   });
 });
 
+// node.js (backend)
+
+const express = require("express");
+const app = express();
+
+// Cache CSS & JS για 7 μέρες
+app.use('/styles', express.static('styles', {
+  maxAge: '7d'
+}));
+
+// Cache εικόνων για 30 μέρες
+app.use('/images', express.static('images', {
+  maxAge: '30d'
+}));
+
+// Cache ανεβασμένων αρχείων για 1 μέρα
+app.use('/uploads', express.static('uploads', {
+  maxAge: '1d'
+}));
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
