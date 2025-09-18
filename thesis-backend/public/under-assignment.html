@@ -66,20 +66,27 @@
   });
 
   // Φέρε όλους τους διαθέσιμους καθηγητές για επιλογή
-  function loadProfessors() {
-    fetch("http://localhost:3000/users/professors")
-      .then(res => res.json())
-      .then(profs => {
-        const select = document.getElementById("professorSelect");
-        select.innerHTML = "";
-        profs.forEach(p => {
-          const opt = document.createElement("option");
-          opt.value = p.UserID;
-          opt.textContent = `${p.UserName} (${p.Email})`;
-          select.appendChild(opt);
-        });
+  async function loadProfessors(thesis) {
+  try {
+    const res = await fetch(`${API_BASE}/users?role=PROFESSOR`);
+    if (!res.ok) throw new Error("Σφάλμα στο fetch");
+    const professors = await res.json();
+
+    const select = document.getElementById("professorSelect");
+    select.innerHTML = "";
+
+    professors
+      .filter(p => p.UserID !== thesis.ProfessorID) 
+      .forEach(prof => {
+        const opt = document.createElement("option");
+        opt.value = prof.UserID;
+        opt.textContent = prof.UserName;
+        select.appendChild(opt);
       });
+  } catch (err) {
+    console.error("Σφάλμα φόρτωσης καθηγητών", err);
   }
+}
 
   // Πρόσκληση νέου μέλους
   document.getElementById("inviteBtn").addEventListener("click", () => {

@@ -1582,6 +1582,26 @@ router.get("/:id/requests", async (req, res) => {
 
 module.exports = router;
 
+// Επιστροφή όλων των καθηγητών
+router.get("/users", async (req, res) => {
+  const role = req.query.role;
+  try {
+    let sql = "SELECT UserID, UserName FROM Users";
+    let params = [];
+
+    if (role) {
+      sql += " WHERE Role = ?";
+      params.push(role);
+    }
+
+    const rows = await db.query(sql, params);
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Σφάλμα βάσης δεδομένων" });
+  }
+});
+
 // Καταχώριση στοιχείων "Υπό Εξέταση" από φοιτητή
 app.post("/examination", upload.single("file"), (req, res) => {
   const {
