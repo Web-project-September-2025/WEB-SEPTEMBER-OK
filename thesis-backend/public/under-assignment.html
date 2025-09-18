@@ -33,97 +33,81 @@
   <button class="logout-btn" onclick="window.location.href='student-dashboard.html'">Επιστροφή</button>
 
   <script>
-  const user = JSON.parse(localStorage.getItem("user"));
-  let thesis = null;
+    const user = JSON.parse(localStorage.getItem("user"));
+    let thesisId = null;
 
-  document.addEventListener("DOMContentLoaded", () => {
-    if (!user || user.Role !== "STUDENT") {
-      alert("⛔ Μη εξουσιοδοτημένη πρόσβαση");
-      window.location.href = "login.html";
-      return;
+    document.addEventListener("DOMContentLoaded", () => {
+      // Πάρε τη διπλωματική του φοιτητή
+      fetch(`http://localhost:3000/thesis/student/${user.UserID}`)
+        .then(res => res.json())
+        .then(data => {
+          const thesis = data.find(t => t.Status === "UNDER-ASSIGNMENT");
+          if (!thesis) {
+            alert("Δεν βρέθηκε διπλωματική σε κατάσταση 'Υπό Ανάθεση'");
+            return;
+          }
+          thesisId = thesis.ThesisID;
+
+          document.getElementById("thesisTitle").textContent = thesis.Title;
+          document.getElementById("thesisDescription").textContent = thesis.Description;
+
+          loadProfessors();
+          loadRequests();
+        });
+
+      // Πρόσκληση καθηγητή
+      document.getElementById("inviteBtn").addEventListener("click", () => {
+        const professorId = document.getElementById("professorSelect").value;
+        if (!professorId) return alert("Επιλέξτε καθηγητή!");
+
+        fetch("http://localhost:3000/requests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ThesisID: thesisId, ProfessorID: professorId })
+        })
+        .then(res => {
+          if (!res.ok) throw new Error("Αποτυχία αποστολής αίτησης");
+          return res.json();
+        })
+        .then(() => {
+          alert("Η αίτηση εστάλη");
+          loadRequests();
+        })
+        .catch(err => alert("Σφάλμα: " + err.message));
+      });
+    });
+
+    // Φόρτωσε καθηγητές
+    function loadProfessors() {
+      fetch("http://localhost:3000/professors")
+        .then(res => res.json())
+        .then(professors => {
+          const select = document.getElementById("professorSelect");
+          select.innerHTML = `<option value="">-- Επιλογή Καθηγητή --</option>`;
+          professors.forEach(p => {
+            const option = document.createElement("option");
+            option.value = p.UserID;
+            option.textContent = `${p.UserName} (${p.Email})`;
+            select.appendChild(option);
+          });
+        });
     }
 
-    // Φέρε τη ΔΕ που είναι UNDER-ASSIGNMENT
-    fetch(`http://localhost:3000/thesis/student/${user.UserID}`)
-      .then(res => res.json())
-      .then(theses => {
-        thesis = theses.find(t => t.Status === "UNDER-ASSIGNMENT");
-        if (!thesis) {
-          alert("Δεν βρέθηκε διπλωματική σε κατάσταση 'Υπό Ανάθεση'");
-          return;
-        }
-
-        document.getElementById("thesisTitle").textContent = thesis.Title;
-        document.getElementById("thesisDescription").textContent = thesis.Description;
-
-        loadProfessors();
-        loadRequests();
-      })
-      .catch(err => {
-        console.error(err);
-        alert("Σφάλμα φόρτωσης.");
-      });
-  });
-
-  // Φέρε όλους τους διαθέσιμους καθηγητές για επιλογή
-  async function loadProfessors(thesis) {
-  try {
-    const res = await fetch(`${API_BASE}/users?role=PROFESSOR`);
-    if (!res.ok) throw new Error("Σφάλμα στο fetch");
-    const professors = await res.json();
-
-    const select = document.getElementById("professorSelect");
-    select.innerHTML = "";
-
-    professors
-      .filter(p => p.UserID !== thesis.ProfessorID) 
-      .forEach(prof => {
-        const opt = document.createElement("option");
-        opt.value = prof.UserID;
-        opt.textContent = prof.UserName;
-        select.appendChild(opt);
-      });
-  } catch (err) {
-    console.error("Σφάλμα φόρτωσης καθηγητών", err);
-  }
-}
-
-  // Πρόσκληση νέου μέλους
-  document.getElementById("inviteBtn").addEventListener("click", () => {
-    const profId = document.getElementById("professorSelect").value;
-    if (!profId) return;
-
-    fetch(`http://localhost:3000/thesis/${thesis.ThesisID}/invite`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ professorId: profId })
-    })
-    .then(res => res.json())
-    .then(data => {
-      alert("✅ Στάλθηκε πρόσκληση!");
-      loadRequests();
-    })
-    .catch(err => {
-      console.error(err);
-      alert("⛔ Σφάλμα αποστολής πρόσκλησης");
-    });
-  });
-
-  // Φέρε τις τρέχουσες αιτήσεις
-  function loadRequests() {
-    fetch(`http://localhost:3000/thesis/${thesis.ThesisID}/requests`)
-      .then(res => res.json())
-      .then(requests => {
-        const ul = document.getElementById("requestsList");
-        ul.innerHTML = "";
-        requests.forEach(r => {
-          const li = document.createElement("li");
-          li.textContent = `${r.ProfessorName} - ${r.Status}`;
-          ul.appendChild(li);
+    // Φόρτωσε αιτήσεις
+    function loadRequests() {
+      if (!thesisId) return;
+      fetch(`http://localhost:3000/requests/${thesisId}`)
+        .then(res => res.json())
+        .then(requests => {
+          const list = document.getElementById("requestsList");
+          list.innerHTML = "";
+          requests.forEach(r => {
+            const li = document.createElement("li");
+            li.textContent = `${r.UserName} - ${r.ReqStatus}`;
+            list.appendChild(li);
+          });
         });
-      });
-  }
+    }
   </script>
 </body>
 </html>
-

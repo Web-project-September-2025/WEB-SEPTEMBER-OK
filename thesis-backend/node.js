@@ -1522,98 +1522,40 @@ function getOrCreateExam(thesisId, { examDate, method, location }, cb) {
   });
 }
 
-const express = require("express");
-const router = express.Router();
-const db = require("../db"); 
-
-async function loadProfessors(thesis) {
-  try {
-    const res = await fetch(`${API_BASE}/users/professors`);
-    if (!res.ok) throw new Error("Σφάλμα στο fetch");
-    const professors = await res.json();
-
-    const select = document.getElementById("professorSelect");
-    select.innerHTML = "";
-
-    professors
-      .filter(p => p.UserID !== thesis.ProfessorID) // μη βάλει τον επιβλέποντα
-      .forEach(prof => {
-        const opt = document.createElement("option");
-        opt.value = prof.UserID;
-        opt.textContent = prof.UserName;
-        select.appendChild(opt);
-      });
-  } catch (err) {
-    console.error("Σφάλμα φόρτωσης καθηγητών", err);
-  }
-}
-await loadProfessors(thesis);
-
-document.getElementById("inviteBtn").addEventListener("click", async () => {
-  const select = document.getElementById("professorSelect");
-  const profId = select.value;
-
-  if (!profId) {
-    alert("Επιλέξτε καθηγητή πρώτα!");
-    return;
-  }
-
-  try {
-    const body = { thesisId: queryThesisId, professorId: profId };
-    const res = await fetch(`${API_BASE}/thesis/invite`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-
-    if (res.ok) {
-      alert("✅ Η πρόσκληση στάλθηκε!");
-      // μπορείς εδώ να κάνεις refresh το requestsList
-    } else {
-      const err = await res.json();
-      alert("⛔ " + err.error);
-    }
-  } catch (err) {
-    alert("Σφάλμα: " + err.message);
-  }
+//  Λήψη όλων των καθηγητών
+app.get("/professors", (req, res) => {
+  const sql = "SELECT UserID, UserName, Email FROM users WHERE Role = 'PROFESSOR'";
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).send(err);
+    res.json(results);
+  });
 });
 
-// Πρόσκληση καθηγητή σε τριμελή
-app.post("/thesis/invite", async (req, res) => {
-  const { thesisId, professorId } = req.body;
-  if (!thesisId || !professorId) {
-    return res.status(400).json({ error: "Λείπουν δεδομένα" });
-  }
-
-  try {
-    const sql = "INSERT INTO ThesisCommitteeInvites (ThesisID, ProfessorID, Status) VALUES (?, ?, 'PENDING')";
-    await db.promise().query(sql, [thesisId, professorId]);
-
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Σφάλμα στη βάση" });
-  }
+//  Λήψη αιτήσεων για συγκεκριμένη διπλωματική
+app.get("/requests/:thesisId", (req, res) => {
+  const sql = `
+    SELECT r.ReqID, r.ReqStatus, u.UserName, u.Email
+    FROM requests r
+    JOIN users u ON r.ProfessorID = u.UserID
+    WHERE r.ThesisID = ?
+  `;
+  db.query(sql, [req.params.thesisId], (err, results) => {
+    if (err) return res.status(500).send(err);
+    res.json(results);
+  });
 });
 
-// Επιστροφή όλων των καθηγητών
-router.get("/users", async (req, res) => {
-  const role = req.query.role;
-  try {
-    let sql = "SELECT UserID, UserName FROM Users";
-    let params = [];
-
-    if (role) {
-      sql += " WHERE Role = ?";
-      params.push(role);
-    }
-
-    const rows = await db.query(sql, params);
-    res.json(rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Σφάλμα βάσης δεδομένων" });
-  }
+//  Καταχώρηση νέας αίτησης καθηγητή
+app.post("/requests", (req, res) => {
+  const { ThesisID, ProfessorID } = req.body;
+  const sql = `
+    INSERT INTO requests (ThesisID, ProfessorID, ReqStatus)
+    VALUES (?, ?, 'QUEUED')
+  `;
+  db.query(sql, [ThesisID, ProfessorID], (err, result) => {
+    if (err) return res.status(500).send(err);
+    res.status(201).json({ message: "Η αίτηση καταχωρήθηκε." });
+  });
 });
 
 // Καταχώριση στοιχείων "Υπό Εξέταση" από φοιτητή
