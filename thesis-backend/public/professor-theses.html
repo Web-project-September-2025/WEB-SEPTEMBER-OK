@@ -63,7 +63,6 @@
     .timeline li { margin: 6px 0; }
     .actions-row { display:flex; gap:10px; flex-wrap: wrap; margin-top: 8px; }
 
-    /* Sub-cards (δεξιά στήλη) */
     .subcard {
       background: rgba(255,255,255,.06);
       border-radius: 12px;
@@ -93,7 +92,6 @@
 
   <script defer src="professor-theses.js"></script>
 
-  <!-- Δυναμικό κενό κάτω από τη γραμμή -->
   <script>
     function setBelowLineOffset(){
       const line = document.querySelector('.top-line');
@@ -159,7 +157,6 @@
       <div id="countWrap" class="muted" style="margin-top:10px;"></div>
 
       <div class="split">
-        <!-- Αριστερά: Λίστα -->
         <div>
           <table class="theses-table" id="table" aria-label="Λίστα διπλωματικών">
             <thead>
@@ -176,7 +173,6 @@
           </table>
         </div>
 
-        <!-- Δεξιά: Λεπτομέρειες -->
         <div class="detail card" id="detail" style="display:none;">
           <h3 id="d_title"></h3>
           <div class="muted" id="d_prof"></div>
@@ -201,14 +197,14 @@
             <div id="d_links" class="actions-row"></div>
           </div>
 
-          <!-- (C) ΥΠΟΒΟΛΕΣ ΦΟΙΤΗΤΗ (DRAFT) -->
+          <!-- ΥΠΟΒΟΛΕΣ ΦΟΙΤΗΤΗ -->
           <div id="submissionsBox" class="subcard" style="display:none;">
             <h4>Υποβολές Φοιτητή (πρόχειρο κείμενο)</h4>
             <div class="help">Ορατές σε Υπό Εξέταση από επιβλέποντα/τριμελή.</div>
             <ul id="subsList" style="list-style:none; margin:8px 0 0; padding:0;"></ul>
           </div>
 
-          <!-- (D) ΑΝΑΚΟΙΝΩΣΗ ΠΑΡΟΥΣΙΑΣΗΣ (μόνο επιβλέπων) -->
+          <!-- ΑΝΑΚΟΙΝΩΣΗ ΠΑΡΟΥΣΙΑΣΗΣ -->
           <div id="announcementBox" class="subcard" style="display:none;">
             <h4>Ανακοίνωση Παρουσίασης</h4>
             <div class="help">Διαθέσιμο όταν έχουν συμπληρωθεί στοιχεία εξέτασης.</div>
@@ -219,7 +215,7 @@
             <pre id="annPreviewText" style="white-space:pre-wrap; background:rgba(255,255,255,.06); padding:10px; border-radius:8px; margin-top:8px;"></pre>
           </div>
 
-          <!-- (E) ΒΑΘΜΟΛΟΓΗΣΗ -->
+          <!-- ΒΑΘΜΟΛΟΓΗΣΗ -->
           <div id="gradingBox" class="subcard" style="display:none;">
             <h4>Βαθμολόγηση (κριτήρια)</h4>
             <div id="gradingInfo" class="help">—</div>
@@ -258,7 +254,7 @@
             </div>
           </div>
 
-          <!-- (A) ΣΗΜΕΙΩΣΕΙΣ ΔΙΔΑΣΚΟΝΤΟΣ (ACTIVE μόνο, ορατές μόνο στον δημιουργό) -->
+          <!-- ΣΗΜΕΙΩΣΕΙΣ ΔΙΔΑΣΚΟΝΤΟΣ (ACTIVE μόνο, ορατές μόνο στον δημιουργό) -->
           <div id="notesBox" class="subcard" style="display:none;">
             <h4>Σημειώσεις (μόνο για εσάς)</h4>
             <form id="noteForm">
@@ -272,7 +268,7 @@
             <ul id="notesList"></ul>
           </div>
 
-          <!-- (B) ΕΝΕΡΓΕΙΕΣ ΕΠΙΒΛΕΠΟΝΤΑ (ACTIVE μόνο) -->
+          <!-- ΕΝΕΡΓΕΙΕΣ ΕΠΙΒΛΕΠΟΝΤΑ (ACTIVE μόνο) -->
           <div id="supervisorActions" class="subcard" style="display:none;">
             <h4>Ενέργειες Επιβλέποντα</h4>
 
@@ -305,8 +301,8 @@
             </div>
           </div>
 
-        </div> <!-- /detail -->
-      </div> <!-- /split -->
+        </div>
+      </div> 
     </section>
   </div>
 </body>

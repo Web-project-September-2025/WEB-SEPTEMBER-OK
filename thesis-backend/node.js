@@ -1,4 +1,4 @@
-// --- imports ---
+// imports 
 const express = require("express");
 const mysql = require("mysql2");
 const cors = require("cors");
@@ -8,11 +8,11 @@ const multer = require("multer");
 const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
 
-// --- constants ---
+// constants 
 const JWT_SECRET = "change_me_super_secret";
 const PORT = 3000;
 
-// --- app & middleware ---
+// app & middleware 
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -24,7 +24,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/files", express.static(path.join(__dirname, "uploads")));
 
 
-// --- uploads (optional PDF) ---
+// uploads (optional PDF) 
 const uploadRoot = path.join(__dirname, "uploads");
 const pdfDir = path.join(uploadRoot, "pdfs");
 fs.mkdirSync(pdfDir, { recursive: true });
@@ -49,7 +49,7 @@ const upload = multer({
 // Serve uploaded files
 app.use("/uploads", express.static(uploadRoot));
 
-// ---- DB
+// DB
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
@@ -62,7 +62,7 @@ db.connect((err) => {
   console.log("Συνδέθηκε με τη βάση!");
 });
 
-// ---- AUTH helpers
+// AUTH helpers
 function auth(req, res, next) {
   const hdr = req.headers.authorization || "";
   const token = hdr.startsWith("Bearer ") ? hdr.slice(7) : null;
@@ -91,7 +91,7 @@ function authFromHeaderOrQuery(req, res, next) {
   catch { return res.status(401).json({ message: "Invalid token" }); }
 }
 
-// ---- AUTH: LOGIN
+// AUTH: LOGIN
 app.post("/login", (req, res) => {
   let { email = "", password = "", role = "" } = req.body;
   email = String(email).trim();
@@ -121,7 +121,7 @@ app.post("/login", (req, res) => {
 
 app.get("/me", auth, (req, res) => res.json(req.user));
 
-// === helpers ===
+// helpers 
 function isSupervisorOrCommittee(thesisId, profId, cb) {
   const sql = `
     SELECT 1
@@ -141,7 +141,7 @@ function isSupervisorOrCommittee(thesisId, profId, cb) {
 }
 
 
-// ---- PROFESSOR TOPICS ----
+// PROFESSOR TOPICS
 // List topics of the logged-in professor
 app.get("/professor/topics", auth, requireProfessor, (req, res) => {
   const onlyAssignable = String(req.query.onlyAssignable || "") === "1";
@@ -259,9 +259,7 @@ app.delete("/professor/topics/:id", auth, requireProfessor, (req, res) => {
   });
 });
 
-//
-// ===== ΑΝΑΖΗΤΗΣΗ ΦΟΙΤΗΤΩΝ (AM > UserID > Όνομα) =====
-//
+// ΑΝΑΖΗΤΗΣΗ ΦΟΙΤΗΤΩΝ (AM > UserID > Όνομα)
 app.get("/students", auth, requireProfessor, (req, res) => {
   const q = String(req.query.q || "").trim();
   if (!q) { res.json([]); return; }
@@ -303,11 +301,7 @@ app.get("/students", auth, requireProfessor, (req, res) => {
   });
 });
 
-// ==================================================================
 // Προσωρινή ανάθεση / Ακύρωση (σβήνει/καθαρίζει και τις προσκλήσεις)
-//  - Ανάθεση:  UNDER-ASSIGNMENT + StudentID NULL  ->  PROVISIONAL + StudentID
-//  - Ακύρωση:  PROVISIONAL (και όχι confirmed)    ->  UNDER-ASSIGNMENT + StudentID NULL + delete invitations
-// ==================================================================
 app.put("/thesis/:id/assign", auth, requireProfessor, (req, res) => {
   const thesisId = Number(req.params.id);
   const { studentId } = req.body; // null => ακύρωση
@@ -325,7 +319,7 @@ app.put("/thesis/:id/assign", auth, requireProfessor, (req, res) => {
       res.status(403).json({ message: "Δεν είστε ο επιβλέπων του θέματος." }); return;
     }
 
-    // === ΑΚΥΡΩΣΗ ΠΡΟΣΩΡΙΝΗΣ ΑΝΑΘΕΣΗΣ ===
+    // ΑΚΥΡΩΣΗ ΠΡΟΣΩΡΙΝΗΣ ΑΝΑΘΕΣΗΣ 
     if (studentId == null) {
       if (t.Status !== 'PROVISIONAL' || Number(t.AssignmentConfirmed) === 1) {
         res.status(409).json({ message: "Ακύρωση επιτρέπεται μόνο σε προσωρινά (PROVISIONAL) θέματα χωρίς οριστικοποίηση." });
@@ -348,7 +342,7 @@ app.put("/thesis/:id/assign", auth, requireProfessor, (req, res) => {
       return;
     }
 
-    // === ΠΡΟΣΩΡΙΝΗ ΑΝΑΘΕΣΗ ΣΕ ΦΟΙΤΗΤΗ ===
+    // ΠΡΟΣΩΡΙΝΗ ΑΝΑΘΕΣΗ ΣΕ ΦΟΙΤΗΤΗ 
     if (t.Status !== 'UNDER-ASSIGNMENT' || t.StudentID != null) {
       res.status(409).json({ message: "Ανάθεση επιτρέπεται μόνο σε διαθέσιμα (UNDER-ASSIGNMENT) θέματα χωρίς φοιτητή." });
       return;
@@ -383,7 +377,7 @@ app.put("/thesis/:id/assign", auth, requireProfessor, (req, res) => {
         `;
         db.query(upd, [studentId, thesisId], (e3) => {
           if (e3) { res.status(500).send(e3); return; }
-          // Καθαρίζουμε τυχόν παλιές προσκλήσεις από προηγούμενο κύκλο
+          // Καθαρισμός τυχόν παλιών προσκλήσεων από προηγούμενο κύκλο
           db.query(`DELETE FROM requests WHERE ThesisID=?`, [thesisId], () => {
             res.json({ message: "Το θέμα ανατέθηκε προσωρινά (PROVISIONAL) στον φοιτητή." });
           });
@@ -393,7 +387,7 @@ app.put("/thesis/:id/assign", auth, requireProfessor, (req, res) => {
   });
 });
 
-// ===== Δημόσια/βασικά =====
+// Δημόσια/βασικά 
 app.get("/theses", (req, res) => {
   const statuses = (req.query.statuses || "")
     .split(",").map((s) => s.trim()).filter(Boolean);
@@ -470,11 +464,11 @@ app.post("/thesis/:id/protocol", (req, res) => {
   });
 });
 
-// Ακύρωση ΔΕ από τον επιβλέποντα (μόνο σε ACTIVE και μόνο μετά από 2 έτη από ActiveSince)
+// Ακύρωση ΔΕ από τον επιβλέποντα 
 app.put("/thesis/:id/cancel", auth, requireProfessor, (req, res) => {
   const thesisId = Number(req.params.id);
   const me = req.user.UserID;
-  const { gsNumber } = req.body; // ο λόγος καταχωρείται αυτόματα "από Διδάσκοντα"
+  const { gsNumber } = req.body; 
 
   if (!gsNumber) return res.status(400).json({ message: "Απαιτείται Αριθμός Πρωτοκόλλου ΓΣ." });
 
@@ -490,7 +484,7 @@ app.put("/thesis/:id/cancel", auth, requireProfessor, (req, res) => {
     if (t.ProfessorID !== me) return res.status(403).json({ message: "Μόνο ο επιβλέπων μπορεί να ακυρώσει." });
     if (t.Status !== "ACTIVE") return res.status(409).json({ message: "Ακύρωση επιτρέπεται μόνο για ενεργές (ACTIVE) διπλωματικές." });
 
-    // Υπολογισμός 2 ετών από ActiveSince (fallback σε StartDate αν λείπει)
+    // Υπολογισμός 2 ετών από ActiveSince 
     const baseDate = t.ActiveSince || t.StartDate;
     if (!baseDate) return res.status(409).json({ message: "Δεν υπάρχει διαθέσιμη ημερομηνία οριστικής ανάθεσης." });
 
@@ -612,7 +606,7 @@ app.post("/import-users", (req, res) => {
     });
 });
 
-// ===== Λίστα/Export για καθηγητή =====
+// Λίστα/Export για καθηγητή 
 app.get("/professor/theses", auth, requireProfessor, (req, res) => {
   const me = req.user.UserID;
   const role = String(req.query.role || "all").toLowerCase();
@@ -620,7 +614,7 @@ app.get("/professor/theses", auth, requireProfessor, (req, res) => {
     .split(",").map(s => s.trim()).filter(Boolean);
   const q = String(req.query.q || "").trim();
 
-  // Βασικό SELECT με student/professor names
+  // SELECT με student/professor names
   let sql = `
     SELECT DISTINCT
       t.ThesisID, t.Title, t.Description, t.Status, t.StartDate, t.EndDate,
@@ -665,15 +659,7 @@ app.get("/professor/theses", auth, requireProfessor, (req, res) => {
   });
 });
 
-/*
-  GET /thesis/:id/full
-  Επιστρέφει:
-    - thesis (βασικά πεδία + student/professor names)
-    - committee[]: τα μέλη της τριμελούς (από requests με ReqStatus='ACCEPTED')
-    - timeline[]: ό,τι μπορούμε να συναγάγουμε από StartDate/Exam/End/Status
-    - finalGrade: μέσος όρος βαθμών (αν υπάρχει)
-    - latestSubmission: τελευταίο submission (αν υπάρχει)
-*/
+
 app.get("/thesis/:id/full", auth, requireProfessor, (req, res) => {
   const id = Number(req.params.id);
 
@@ -776,15 +762,6 @@ app.get("/thesis/:id/full", auth, requireProfessor, (req, res) => {
   });
 });
 
-
-
-/*
-  GET /professor/theses/export
-    role=all|supervisor|committee
-    statuses=...
-    q=...
-    format=csv|json   (default: json)
-*/
 app.get("/professor/theses/export", authFromHeaderOrQuery, requireProfessor, (req, res) => {
   const role = String(req.query.role || "all").toLowerCase();
   const statuses = (req.query.statuses || "");
@@ -933,7 +910,7 @@ app.get("/thesis/:id/announcement/preview", auth, requireProfessor, (req, res) =
   });
 });
 
-// Καταχώριση ανακοίνωσης (δημιουργεί εγγραφή στο announcements)
+// Καταχώριση ανακοίνωσης 
 app.post("/thesis/:id/announcement", auth, requireProfessor, (req, res) => {
   const thesisId = Number(req.params.id);
   const me = req.user.UserID;
@@ -964,7 +941,7 @@ app.post("/thesis/:id/announcement", auth, requireProfessor, (req, res) => {
   });
 });
 
-// Άνοιγμα/κλείσιμο grading (Exam.GradingOpen)
+// Άνοιγμα/κλείσιμο grading 
 app.put("/thesis/:id/grading/open", auth, requireProfessor, (req, res) => {
   const thesisId = Number(req.params.id);
   const me = req.user.UserID;
@@ -978,7 +955,6 @@ app.put("/thesis/:id/grading/open", auth, requireProfessor, (req, res) => {
     if (t.ProfessorID !== me) return res.status(403).json({ message:"Μόνο ο επιβλέπων." });
     if (t.Status !== 'UNDER-EXAMINATION') return res.status(409).json({ message:"Επιτρέπεται στη φάση Υπό Εξέταση." });
 
-    // από την helper getOrCreateExam που έχεις ήδη
     getOrCreateExam(thesisId, { }, (e2, examRow) => {
       if (e2) return res.status(500).send(e2);
       db.query(`UPDATE exam SET GradingOpen=? WHERE ExamID=?`, [open ? 1 : 0, examRow.ExamID], (e3) => {
@@ -989,7 +965,7 @@ app.put("/thesis/:id/grading/open", auth, requireProfessor, (req, res) => {
   });
 });
 
-// Λίστα βαθμών για examId (ορατή σε επιβλέποντα/τριμελή)
+// Λίστα βαθμών (ορατή σε επιβλέποντα/τριμελή)
 app.get("/exam/:examId/grades", auth, requireProfessor, (req, res) => {
   const examId = Number(req.params.examId);
   const qT = `SELECT ThesisID FROM exam WHERE ExamID=? LIMIT 1`;
@@ -1062,7 +1038,7 @@ app.post("/exam/:examId/grade", auth, requireProfessor, (req, res) => {
       const bad = [w, d, t, p].some(n => Number.isNaN(n) || n < 0 || n > 10);
       if (bad) return res.status(400).json({ message: "Οι βαθμοί πρέπει να είναι 0..10." });
 
-      // Αριθμητικό, 2 δεκαδικά
+      // Υπολογισμός τελικού βαθμού (αν δεν δοθεί)
       const total = Math.round((w*0.60 + d*0.15 + t*0.15 + p*0.10) * 100) / 100;
 
       const sql = `
@@ -1085,12 +1061,7 @@ app.post("/exam/:examId/grade", auth, requireProfessor, (req, res) => {
   });
 });
 
-
-
-
-
-// ===== Προσκλήσεις Τριμελούς για Διδάσκοντες =====
-
+// Προσκλήσεις Τριμελούς για Διδάσκοντες 
 // Λίστα ενεργών προσκλήσεων (QUEUED) για τον συνδεδεμένο καθηγητή
 app.get("/professor/invitations", auth, requireProfessor, (req, res) => {
   const me = req.user.UserID;
@@ -1142,7 +1113,7 @@ app.put("/requests/:id/accept", auth, requireProfessor, (req, res) => {
           // Πλέον ACTIVE (όχι UNDER-EXAMINATION) + stamped ActiveSince
           const up = `UPDATE thesis SET Status='ACTIVE', ActiveSince=IFNULL(ActiveSince, CURDATE()) WHERE ThesisID=? AND Status='PROVISIONAL'`;
           db.query(up, [r.ThesisID], () => {
-            // κλείσε ό,τι QUEUED έμεινε
+            // κλείνει ό,τι QUEUED έμεινε
             db.query(
               `UPDATE requests SET ReqStatus='REJECTED', RejectedAt=NOW() WHERE ThesisID=? AND ReqStatus='QUEUED'`,
               [r.ThesisID],
@@ -1158,7 +1129,7 @@ app.put("/requests/:id/accept", auth, requireProfessor, (req, res) => {
 });
 
 
-// ΑΠΟΡΡΙΨΗ πρόσκλησης (με timestamps)
+// ΑΠΟΡΡΙΨΗ πρόσκλησης 
 app.put("/requests/:id/reject", auth, requireProfessor, (req, res) => {
   const id = Number(req.params.id);
   const me = req.user.UserID;
@@ -1263,7 +1234,7 @@ app.get("/professor/provisional-theses", auth, requireProfessor, (req, res) => {
   });
 });
 
-// Λίστα καθηγητών (με φίλτρα q, excludeMe, excludeThesisId)
+// Λίστα καθηγητών 
 app.get("/professors", auth, (req, res) => {
   const q = String(req.query.q || "").trim();
   const excludeMe = String(req.query.excludeMe || "") === "1";
@@ -1387,7 +1358,7 @@ app.get("/professor/stats", auth, requireProfessor, async (req, res) => {
   }
 });
 
-// ACTIVE -> UNDER-EXAMINATION (μόνο ο επιβλέπων)
+// ACTIVE σε UNDER-EXAMINATION (μόνο ο επιβλέπων)
 app.put("/thesis/:id/mark-under-examination", auth, requireProfessor, (req, res) => {
   const thesisId = Number(req.params.id);
   const me = req.user.UserID;
@@ -1413,7 +1384,7 @@ app.get("/thesis/:id/notes", auth, requireProfessor, (req, res) => {
   const thesisId = Number(req.params.id);
   const me = req.user.UserID;
 
-  // Επιτρέπεται σε επιβλέποντα Ή σε μέλος τριμελούς (ACCEPTED), και μόνο αν είναι ACTIVE
+  // Επιτρέπεται σε επιβλέποντα ή σε μέλος τριμελούς (ACCEPTED), και μόνο αν είναι ACTIVE
   const qAuth = `
     SELECT t.ThesisID
     FROM thesis t
@@ -1438,7 +1409,7 @@ app.get("/thesis/:id/notes", auth, requireProfessor, (req, res) => {
   });
 });
 
-// ➕ Δώσε exam (αν υπάρχει) για τη διπλωματική
+// Δώσε exam (αν υπάρχει) για τη διπλωματική
 app.get("/thesis/:id/exam", auth, requireProfessor, (req, res) => {
   const thesisId = Number(req.params.id);
   const me = req.user.UserID;
@@ -1461,7 +1432,7 @@ app.get("/thesis/:id/exam", auth, requireProfessor, (req, res) => {
 });
 
 
-// Καταχώριση νέας σημείωσης (έως 300 χαρακτήρες)
+// Καταχώριση νέας σημείωσης 
 app.post("/thesis/:id/notes", auth, requireProfessor, (req, res) => {
   const thesisId = Number(req.params.id);
   const me = req.user.UserID;
@@ -1492,8 +1463,7 @@ app.post("/thesis/:id/notes", auth, requireProfessor, (req, res) => {
   });
 });
 
-// ================== STUDENT ENDPOINTS ==================
-
+// STUDENT ENDPOINTS 
 // Λίστα διπλωματικών του φοιτητή
 app.get("/thesis/student/:id", (req, res) => {
   const studentId = Number(req.params.id);
@@ -1512,7 +1482,7 @@ app.get("/thesis/student/:id", (req, res) => {
   });
 });
 
-// Βασικά στοιχεία χρήστη (για το box προφίλ)
+// στοιχεία χρήστη 
 app.get("/user/:id", (req, res) => {
   const userId = Number(req.params.id);
   const sql = `
@@ -1534,7 +1504,7 @@ function getOrCreateExam(thesisId, { examDate, method, location }, cb) {
     if (e1) return cb(e1);
     if (rows.length) return cb(null, rows[0]);
 
-    // Αν δεν υπάρχει, φτιάξε μία (χρειάζεται ExamDate NOT NULL)
+    // Αν δεν υπάρχει, φτιάξε μία 
     const dateToUse = examDate || new Date().toISOString().slice(0, 10); // YYYY-MM-DD
     const methodToUse = method || 'IN-PERSON';
     const locToUse = location || 'unknown';
@@ -1553,16 +1523,12 @@ function getOrCreateExam(thesisId, { examDate, method, location }, cb) {
 }
 
 // Καταχώριση στοιχείων "Υπό Εξέταση" από φοιτητή
-// (σώζει submission + ενημερώνει/δημιουργεί εγγραφή exam)
-// ΔΕΝ αλλάζει status — αυτό το κάνει ο επιβλέπων από το δικό του UI.
-// Καταχώριση στοιχείων "Υπό Εξέταση" από φοιτητή (με πραγματικό upload PDF)
-// Καταχώριση στοιχείων "Υπό Εξέταση" από φοιτητή (με πραγματικό upload PDF)
 app.post("/examination", upload.single("file"), (req, res) => {
   const {
     ThesisID,
     LinkURL = "",
-    ExamDate,        // "YYYY-MM-DDTHH:mm"
-    ExamMethod,      // 'IN-PERSON' | 'ONLINE'
+    ExamDate,        
+    ExamMethod,      
     Location
   } = req.body;
 
@@ -1573,12 +1539,12 @@ app.post("/examination", upload.single("file"), (req, res) => {
     return res.status(400).json({ message: "ExamDate, ExamMethod και Location είναι υποχρεωτικά." });
   }
 
-  // αν ανέβηκε αρχείο, αποθηκεύτηκε ήδη από το multer στο /uploads/pdfs
+  // αν ανέβηκε αρχείο αποθηκεύτηκε ήδη από το multer στο /uploads/pdfs
   const fileUrl = req.file
     ? `/uploads/pdfs/${req.file.filename}`
     : 'unknown';
 
-  // 1) Αποθήκευση submission (PDF + εξωτερικός σύνδεσμος)
+  // Αποθήκευση submission (PDF + εξωτερικός σύνδεσμος)
   const insSub = `
     INSERT INTO submissions (ThesisID, FileURL, LinkURL, DateUploaded)
     VALUES (?, ?, ?, NOW())
@@ -1586,7 +1552,7 @@ app.post("/examination", upload.single("file"), (req, res) => {
   db.query(insSub, [thesisId, fileUrl, LinkURL || 'unknown'], (e1) => {
     if (e1) return res.status(500).send(e1);
 
-    // 2) Δημιουργία/ενημέρωση Exam (κρατάμε μόνο την ημερομηνία)
+    // Δημιουργία/ενημέρωση Exam 
     getOrCreateExam(
       thesisId,
       { examDate: String(ExamDate).slice(0,10), method: ExamMethod, location: Location },
@@ -1605,8 +1571,6 @@ app.post("/examination", upload.single("file"), (req, res) => {
     );
   });
 });
-
-
 
 // Ενημέρωση προφίλ χρήστη (διεύθυνση, email, τηλέφωνο)
 app.put("/user/:id", (req, res) => {

@@ -1,7 +1,7 @@
 // professor-theses.js
 const API_BASE = 'http://localhost:3000';
 
-// --- auth helpers ---
+// auth helpers 
 function authHeader() {
   const token = localStorage.getItem('authToken');
   return token ? { Authorization: 'Bearer ' + token } : {};
@@ -16,7 +16,7 @@ function ensureProfessor() {
 ensureProfessor();
 const me = JSON.parse(localStorage.getItem('user') || 'null');
 
-// --- normalize helper for file/link URLs ---
+// normalize helper for file/link URLs 
 function normalizeFileURL(s){
   if(!s) return null;
   if(/^https?:\/\//i.test(s)) return s;
@@ -25,14 +25,14 @@ function normalizeFileURL(s){
   return API_BASE + '/uploads/pdfs/' + s; // fallback for plain filenames
 }
 
-// --- top filters / table ---
+//filters 
 const roleSel     = document.getElementById('role');
 const statusesSel = document.getElementById('statuses');
 const qInput      = document.getElementById('q');
 const tbody       = document.getElementById('tbody');
 const countWrap   = document.getElementById('countWrap');
 
-// --- detail pane ---
+//detail pane
 const detailBox   = document.getElementById('detail');
 const d_title     = document.getElementById('d_title');
 const d_prof      = document.getElementById('d_prof');
@@ -42,21 +42,21 @@ const d_timeline  = document.getElementById('d_timeline');
 const d_grade     = document.getElementById('d_grade');
 const d_links     = document.getElementById('d_links');
 
-// --- supervisor actions ---
+// supervisor actions 
 const actionsBox      = document.getElementById('supervisorActions');
 const activeSinceInfo = document.getElementById('activeSinceInfo');
 const btnToUnderExam  = document.getElementById('btnToUnderExam');
 const btnCancelActive = document.getElementById('btnCancelActive');
 const gsNumberInput   = document.getElementById('gsNumber');
 
-// --- notes ---
+// notes 
 const notesBox  = document.getElementById('notesBox');
 const noteForm  = document.getElementById('noteForm');
 const noteBody  = document.getElementById('noteBody');
 const noteCount = document.getElementById('noteCount');
 const notesList = document.getElementById('notesList');
 
-// --- UNDER-EXAMINATION blocks ---
+// UNDER-EXAMINATION blocks 
 const submissionsBox   = document.getElementById('submissionsBox');
 const subsList         = document.getElementById('subsList');
 
@@ -83,7 +83,6 @@ document.getElementById('exportCsvBtn').addEventListener('click', () => exportLi
 document.getElementById('exportJsonBtn').addEventListener('click', () => exportList('json'));
 window.addEventListener('DOMContentLoaded', loadList);
 
-// ------------------------------------------------------------
 function getSelectedStatuses() {
   return Array.from(statusesSel.selectedOptions).map(o => o.value);
 }
@@ -141,7 +140,7 @@ async function loadDetails(id) {
   }
 }
 
-// --- live total for grading form ---
+// live total for grading form 
 function recomputeTotal() {
   const w = Number(scWork?.value || 0);
   const d = Number(scDur?.value || 0);
@@ -152,7 +151,6 @@ function recomputeTotal() {
 }
 [scWork, scDur, scText, scPres].forEach(i => i && i.addEventListener('input', recomputeTotal));
 
-// ------------------------------------------------------------
 function fillDetails({ thesis, committee, timeline, finalGrade, latestSubmission, exam }) {
   detailBox.style.display = 'block';
   d_title.textContent = thesis.Title;
@@ -199,10 +197,7 @@ function fillDetails({ thesis, committee, timeline, finalGrade, latestSubmission
   // Supervisor actions & notes — only ACTIVE
   const isSupervisor = Number(me?.UserID) === Number(thesis.ProfessorID);
 
-  // ... (ό,τι είχες ήδη εδώ για ACTIVE: ακύρωση/μετάβαση/σημειώσεις) ...
-  // (Παρέλειψα το αναλλοίωτο κομμάτι για συντομία)
-
-  // ===================== UNDER-EXAMINATION =====================
+  // UNDER-EXAMINATION
   const amCommittee = (committee || []).some(m => Number(m.UserID) === Number(me?.UserID));
   const canSeeExamStuff = isSupervisor || amCommittee;
   const hasExam = !!(exam && exam.ExamDate);
@@ -340,7 +335,7 @@ function exportList(format) {
   if (q) params.set('q', q);
   params.set('format', format);
 
-  // ΠΕΡΝΑΜΕ ΤΟ JWT ΩΣ query (?token=...)
+  // ΠΕΡΝΑΜΕ ΤΟ JWT ΩΣ query 
   const token = localStorage.getItem('authToken') || '';
   params.set('token', token);
 

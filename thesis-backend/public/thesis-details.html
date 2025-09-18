@@ -14,12 +14,11 @@
       content:""; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:0;
     }
 
-    /* δυναμικό κενό κάτω από τη λευκή γραμμή */
     :root { --below-line-offset: 240px; }
 
     .page{
       max-width: 900px;
-      margin: var(--below-line-offset) auto 40px; /* κάτω από τη γραμμή & κεντραρισμένο */
+      margin: var(--below-line-offset) auto 40px; 
       padding: 0 16px;
       position: relative; z-index: 2;
     }
@@ -40,7 +39,7 @@
       const line = document.querySelector('.top-line');
       if(!line) return;
       const rect = line.getBoundingClientRect();
-      const offset = Math.max(200, Math.round(rect.bottom + 32)); // 32px «αέρας» κάτω απ’ τη γραμμή
+      const offset = Math.max(200, Math.round(rect.bottom + 32)); 
       document.documentElement.style.setProperty('--below-line-offset', offset + 'px');
     }
     window.addEventListener('DOMContentLoaded', setBelowLineOffset);
@@ -48,7 +47,7 @@
   </script>
 </head>
 <body class="student-details">
-  <!-- Logo & λευκή γραμμή (υπάρχει στο main.css) -->
+  <!-- Logo -->
   <div class="overlay-logo">
     <img src="images/logo.png" alt="logo" class="logo" />
     <div class="top-line"></div>
@@ -60,7 +59,7 @@
     <section class="card">
       <h3 id="t_title">—</h3>
       <div class="muted" id="t_prof">—</div>
-      <!-- Ζητήθηκε να ΜΗΝ εμφανίζεται το «Φοιτητής/τρια», οπότε αφαιρέθηκε -->
+
       <div class="muted" id="t_status">—</div>
       <div class="muted" id="t_dates">—</div>
 
@@ -134,7 +133,7 @@
       }
 
       // ΕΜΦΑΝΙΣΗ ΚΟΥΜΠΙΟΥ: logged-in STUDENT + «ανήκει» + σωστά statuses
-      const allowStatuses = ['ACTIVE','UNDER-EXAMINATION']; // πρόσθεσε 'PROVISIONAL' αν το θες
+      const allowStatuses = ['ACTIVE','UNDER-EXAMINATION']; 
       const loadedFromMyList = !queryThesisId && me?.Role === 'STUDENT';
       const isOwner = Number(thesis.StudentID) === Number(me?.UserID) || loadedFromMyList;
 
