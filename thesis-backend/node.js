@@ -26,7 +26,7 @@ app.use('/styles', express.static(path.join(__dirname, "public/styles"),{
 app.use('/images', express.static(path.join(__dirname, "public/images"), {
    maxAge: '30d' }
   ));
-  
+
 app.use('/uploads', express.static(path.join(__dirname, "public/uploads"), { 
   maxAge: '1d' }
   ));
@@ -58,8 +58,8 @@ const upload = multer({
   },
 });
 
-// Serve uploaded files
-app.use("/uploads", express.static(uploadRoot));
+// // Serve uploaded files
+// app.use("/uploads", express.static(uploadRoot));
 
 // DB
 const db = mysql.createConnection({
