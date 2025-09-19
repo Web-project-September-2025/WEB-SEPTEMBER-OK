@@ -27,7 +27,7 @@ app.use('/images', express.static(path.join(__dirname, "public/images"), {
    maxAge: '30d' }
   ));
 
-app.use('/uploads', express.static(path.join(__dirname, "public/uploads"), { 
+app.use('/uploads', express.static(path.join(__dirname, "uploads"), { 
   maxAge: '1d' }
   ));
 
