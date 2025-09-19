@@ -19,19 +19,25 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Cache CSS & JS για 7 μέρες
 app.use('/styles', express.static('styles', {
-  maxAge: '7d'
+  maxAge: '7d',
+  setHeaders: (res, path) => {
+    res.setHeader('Cache-Control', 'public, max-age=604800'); // 7 μέρες σε δευτερόλεπτα
+  }
 }));
 
-// Cache εικόνων για 30 μέρες
 app.use('/images', express.static('images', {
-  maxAge: '30d'
+  maxAge: '30d',
+  setHeaders: (res, path) => {
+    res.setHeader('Cache-Control', 'public, max-age=2592000'); // 30 μέρες
+  }
 }));
 
-// Cache ανεβασμένων αρχείων για 1 μέρα
 app.use('/uploads', express.static('uploads', {
-  maxAge: '1d'
+  maxAge: '1d',
+  setHeaders: (res, path) => {
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 μέρα
+  }
 }));
 
 // Static
