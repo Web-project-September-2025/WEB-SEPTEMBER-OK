@@ -19,26 +19,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.use('/styles', express.static('styles', {
-  maxAge: '7d',
-  setHeaders: (res, path) => {
-    res.setHeader('Cache-Control', 'public, max-age=604800'); // 7 μέρες σε δευτερόλεπτα
-  }
-}));
+app.use('/styles', express.static(path.join(__dirname, "public/styles"),{
+   maxAge: '7d' }
+  ));
 
-app.use('/images', express.static('images', {
-  maxAge: '30d',
-  setHeaders: (res, path) => {
-    res.setHeader('Cache-Control', 'public, max-age=2592000'); // 30 μέρες
-  }
-}));
-
-app.use('/uploads', express.static('uploads', {
-  maxAge: '1d',
-  setHeaders: (res, path) => {
-    res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 μέρα
-  }
-}));
+app.use('/images', express.static(path.join(__dirname, "public/images"), {
+   maxAge: '30d' }
+  ));
+  
+app.use('/uploads', express.static(path.join(__dirname, "public/uploads"), { 
+  maxAge: '1d' }
+  ));
 
 // Static
 app.use(express.static(path.join(__dirname, "public")));
